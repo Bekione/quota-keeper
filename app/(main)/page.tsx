@@ -29,6 +29,20 @@ export default function Dashboard() {
   const deleteModal = useModal();
   const importExportModal = useModal();
 
+  // Listen for import/export trigger from Header (in layout)
+  useEffect(() => {
+    const handleOpenImportExport = () => importExportModal.open();
+    window.addEventListener(
+      "quotakeeper:open-import-export",
+      handleOpenImportExport,
+    );
+    return () =>
+      window.removeEventListener(
+        "quotakeeper:open-import-export",
+        handleOpenImportExport,
+      );
+  }, [importExportModal]);
+
   useEffect(() => {
     let filtered = accounts;
 

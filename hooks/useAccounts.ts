@@ -7,6 +7,7 @@ import {
   getLockedAccounts,
 } from "@/lib/services/account-service";
 import { Account } from "@/types/account";
+import { hydrateFromSupabase } from "@/lib/sync/hydrate";
 
 export function useAccounts() {
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -28,7 +29,8 @@ export function useAccounts() {
   }, []);
 
   useEffect(() => {
-    refetch();
+    // On startup: hydrate IndexedDB from Supabase if empty, then load
+    hydrateFromSupabase().then(() => refetch());
   }, [refetch]);
 
   return { accounts, loading, error, refetch };

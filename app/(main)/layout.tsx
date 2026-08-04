@@ -1,20 +1,15 @@
-'use client';
+"use client";
 
-import type { ReactNode } from 'react';
-import { useEffect, useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import SyncIndicator from '@/components/sync-indicator';
-import Header from '@/components/header';
-import { startSyncManager } from '@/lib/sync/sync-manager';
-import { startAutoUnlock } from '@/lib/services/auto-unlock';
+import type { ReactNode } from "react";
+import { useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import SyncIndicator from "@/components/sync-indicator";
+import Header from "@/components/header";
+import { startSyncManager } from "@/lib/sync/sync-manager";
+import { startAutoUnlock } from "@/lib/services/auto-unlock";
 
-export default function MainLayout({
-  children,
-}: {
-  children: ReactNode;
-}) {
+export default function MainLayout({ children }: { children: ReactNode }) {
   const { loading, authenticated } = useAuth();
-  const [importExportOpen, setImportExportOpen] = useState(false);
 
   useEffect(() => {
     if (authenticated) {
@@ -32,14 +27,22 @@ export default function MainLayout({
   return (
     <div
       style={{
-        minHeight: '100vh',
-        backgroundColor: '#0d0d0d',
-        color: '#ffffff',
+        minHeight: "100vh",
+        backgroundColor: "#0d0d0d",
+        color: "#ffffff",
       }}
     >
-      <Header onImportExport={() => setImportExportOpen(true)} />
+      <Header
+        onImportExport={() => {
+          window.dispatchEvent(
+            new CustomEvent("quotakeeper:open-import-export"),
+          );
+        }}
+      />
       <SyncIndicator />
-      <main style={{ maxWidth: '1400px', margin: '0 auto', padding: '32px 16px' }}>
+      <main
+        style={{ maxWidth: "1400px", margin: "0 auto", padding: "32px 16px" }}
+      >
         {children}
       </main>
     </div>

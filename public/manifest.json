@@ -2,7 +2,7 @@
   "name": "QuotaKeeper - AI Account Quota Manager",
   "short_name": "QuotaKeeper",
   "description": "Manage AI service account quotas efficiently with offline-first technology",
-  "start_url": "/login",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",

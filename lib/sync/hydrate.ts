@@ -4,30 +4,24 @@ import { createClient } from "@/lib/supabase/client";
 import { db } from "@/lib/db/dexie";
 
 /**
- * Hydrate IndexedDB from Supabase on startup.
- * Called once when the app loads — if IndexedDB accounts table is empty,
- * download all accounts from Supabase and populate IndexedDB.
+ * Hydrate/sync IndexedDB from Supabase on startup.
+ *
+ * Strategy:
+ *  - If IndexedDB is empty → bulk download everything from Supabase
+ *  - If IndexedDB has data → fetch from Supabase and merge by updated_at
+ *    (newer version wins, either local or remote)
+ *  - Also handles accounts that exist in Supabase but not locally
  */
 export async function hydrateFromSupabase(): Promise<boolean> {
   try {
-    const localCount = await db.accounts.count();
-
-    if (localCount > 0) {
-      console.log(
-        "[QuotaKeeper] IndexedDB already has data, skipping hydration",
-      );
-      return false;
-    }
-
     if (!navigator.onLine) {
       console.log("[QuotaKeeper] Offline, skipping hydration");
       return false;
     }
 
-    console.log("[QuotaKeeper] IndexedDB empty, hydrating from Supabase...");
     const supabase = createClient();
 
-    const { data, error } = await supabase
+    const { data: remoteAccounts, error } = await supabase
       .from("accounts")
       .select("*")
       .order("created_at", { ascending: true });
@@ -37,24 +31,53 @@ export async function hydrateFromSupabase(): Promise<boolean> {
       return false;
     }
 
-    if (!data || data.length === 0) {
+    if (!remoteAccounts || remoteAccounts.length === 0) {
       console.log("[QuotaKeeper] No accounts in Supabase");
       return false;
     }
 
-    // Bulk insert into IndexedDB
-    await db.accounts.bulkPut(
-      data.map((account: any) => ({
-        ...account,
-        locked_at: account.locked_at ? new Date(account.locked_at) : null,
-        unlock_at: account.unlock_at ? new Date(account.unlock_at) : null,
-        created_at: new Date(account.created_at),
-        updated_at: new Date(account.updated_at),
-      })),
-    );
+    const localAccounts = await db.accounts.toArray();
+    const localMap = new Map(localAccounts.map((a) => [a.id, a]));
 
-    console.log(`[QuotaKeeper] Hydrated ${data.length} accounts from Supabase`);
-    return true;
+    let updated = 0;
+    let added = 0;
+
+    for (const remote of remoteAccounts) {
+      const remoteRecord = {
+        ...remote,
+        locked_at: remote.locked_at ? new Date(remote.locked_at) : null,
+        unlock_at: remote.unlock_at ? new Date(remote.unlock_at) : null,
+        created_at: new Date(remote.created_at),
+        updated_at: new Date(remote.updated_at),
+      };
+
+      const local = localMap.get(remote.id);
+
+      if (!local) {
+        // Account exists in Supabase but not locally → add it
+        await db.accounts.put(remoteRecord);
+        added++;
+      } else {
+        // Both exist — compare updated_at, newer wins
+        const localTime = new Date(local.updated_at).getTime();
+        const remoteTime = new Date(remote.updated_at).getTime();
+
+        if (remoteTime > localTime) {
+          await db.accounts.put(remoteRecord);
+          updated++;
+        }
+      }
+    }
+
+    if (added > 0 || updated > 0) {
+      console.log(
+        `[QuotaKeeper] Hydration: added ${added}, updated ${updated} from Supabase`,
+      );
+      return true;
+    }
+
+    console.log("[QuotaKeeper] IndexedDB already up to date");
+    return false;
   } catch (error) {
     console.error("[QuotaKeeper] Hydration error:", error);
     return false;

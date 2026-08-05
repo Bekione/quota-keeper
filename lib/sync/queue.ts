@@ -1,20 +1,26 @@
-'use client';
+"use client";
 
-import { db } from '@/lib/db/dexie';
-import { SyncOperation } from '@/types/sync';
+import { db } from "@/lib/db/dexie";
+import { SyncOperation } from "@/types/sync";
 
 function generateId(): string {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-    const r = Math.random() * 16 | 0;
-    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
     return v.toString(16);
   });
 }
 
+function notifyQueueChange() {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("quotakeeper:sync-queue-changed"));
+  }
+}
+
 export async function addToSyncQueue(
-  type: 'create' | 'update' | 'delete',
+  type: "create" | "update" | "delete",
   entityId: string,
-  payload: any
+  payload: any,
 ): Promise<void> {
   try {
     const operation: SyncOperation = {
@@ -27,8 +33,9 @@ export async function addToSyncQueue(
     };
 
     await db.syncQueue.add(operation as any);
+    notifyQueueChange();
   } catch (error) {
-    console.error('[QuotaKeeper] Failed to add sync operation:', error);
+    console.error("[QuotaKeeper] Failed to add sync operation:", error);
   }
 }
 
@@ -41,7 +48,7 @@ export async function getSyncQueue(): Promise<SyncOperation[]> {
       lastError: op.lastError,
     }));
   } catch (error) {
-    console.error('[QuotaKeeper] Failed to get sync queue:', error);
+    console.error("[QuotaKeeper] Failed to get sync queue:", error);
     return [];
   }
 }
@@ -49,14 +56,15 @@ export async function getSyncQueue(): Promise<SyncOperation[]> {
 export async function removeSyncOperation(id: string): Promise<void> {
   try {
     await db.syncQueue.delete(id);
+    notifyQueueChange();
   } catch (error) {
-    console.error('[QuotaKeeper] Failed to remove sync operation:', error);
+    console.error("[QuotaKeeper] Failed to remove sync operation:", error);
   }
 }
 
 export async function updateSyncOperation(
   id: string,
-  updates: Partial<SyncOperation>
+  updates: Partial<SyncOperation>,
 ): Promise<void> {
   try {
     const existing = await db.syncQueue.get(id);
@@ -66,8 +74,9 @@ export async function updateSyncOperation(
       ...updates,
       timestamp: new Date(existing.timestamp),
     } as any);
+    notifyQueueChange();
   } catch (error) {
-    console.error('[QuotaKeeper] Failed to update sync operation:', error);
+    console.error("[QuotaKeeper] Failed to update sync operation:", error);
   }
 }
 
@@ -75,7 +84,7 @@ export async function getQueueSize(): Promise<number> {
   try {
     return await db.syncQueue.count();
   } catch (error) {
-    console.error('[QuotaKeeper] Failed to get queue size:', error);
+    console.error("[QuotaKeeper] Failed to get queue size:", error);
     return 0;
   }
 }
@@ -83,7 +92,8 @@ export async function getQueueSize(): Promise<number> {
 export async function clearSyncQueue(): Promise<void> {
   try {
     await db.syncQueue.clear();
+    notifyQueueChange();
   } catch (error) {
-    console.error('[QuotaKeeper] Failed to clear sync queue:', error);
+    console.error("[QuotaKeeper] Failed to clear sync queue:", error);
   }
 }

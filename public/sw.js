@@ -1,5 +1,5 @@
-const CACHE_NAME = "quotakeeper-v2";
-const RUNTIME_CACHE = "quotakeeper-runtime-v2";
+const CACHE_NAME = "quotakeeper-v3";
+const RUNTIME_CACHE = "quotakeeper-runtime-v3";
 
 // Files to cache on install
 const STATIC_ASSETS = ["/offline.html"];
@@ -38,7 +38,7 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-// Fetch event - network first, fallback to cache
+// Fetch event
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -58,24 +58,36 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Navigation requests - network first, fallback to offline page
+  // Navigation requests (HTML pages) - network first, serve cached page offline
   if (request.mode === "navigate") {
     event.respondWith(
-      fetch(request).catch(() => {
-        return caches.match("/offline.html");
-      }),
+      fetch(request)
+        .then((response) => {
+          if (response && response.status === 200) {
+            const responseToCache = response.clone();
+            caches.open(RUNTIME_CACHE).then((cache) => {
+              cache.put(request, responseToCache);
+            });
+          }
+          return response;
+        })
+        .catch(() => {
+          // Offline: serve cached page, or fall back to offline.html
+          return caches.match(request).then((cached) => {
+            return cached || caches.match("/offline.html");
+          });
+        }),
     );
     return;
   }
 
-  // Static assets - network first, fallback to cache
+  // Static assets (JS, CSS, images) - network first, fallback to cache
   event.respondWith(
     fetch(request)
       .then((response) => {
         if (!response || response.status !== 200) {
           return response;
         }
-        // Clone BEFORE any async operation to avoid body-consumed race
         const responseToCache = response.clone();
         caches.open(RUNTIME_CACHE).then((cache) => {
           cache.put(request, responseToCache);

@@ -7,6 +7,7 @@ import {
   useCallback,
   ReactNode,
 } from "react";
+import { CheckCircle, XCircle, AlertTriangle, Info } from "lucide-react";
 
 export type ToastType = "success" | "error" | "warning" | "info";
 
@@ -83,32 +84,35 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 // Toast colors
 const TOAST_STYLES: Record<
   ToastType,
-  { bg: string; border: string; color: string; icon: string }
+  { bg: string; border: string; color: string }
 > = {
   success: {
     bg: "rgba(134, 239, 172, 0.1)",
     border: "rgba(134, 239, 172, 0.3)",
     color: "#86efac",
-    icon: "✓",
   },
   error: {
     bg: "rgba(239, 68, 68, 0.1)",
     border: "rgba(239, 68, 68, 0.3)",
     color: "#fca5a5",
-    icon: "✕",
   },
   warning: {
     bg: "rgba(251, 191, 36, 0.1)",
     border: "rgba(251, 191, 36, 0.3)",
     color: "#fbbf24",
-    icon: "⚠",
   },
   info: {
     bg: "rgba(147, 197, 253, 0.1)",
     border: "rgba(147, 197, 253, 0.3)",
     color: "#93c5fd",
-    icon: "ℹ",
   },
+};
+
+const TOAST_ICONS: Record<ToastType, ReactNode> = {
+  success: <CheckCircle size={16} />,
+  error: <XCircle size={16} />,
+  warning: <AlertTriangle size={16} />,
+  info: <Info size={16} />,
 };
 
 function ToastContainer({
@@ -151,9 +155,9 @@ function ToastContainer({
             }}
           >
             <span
-              style={{ color: style.color, fontSize: "16px", flexShrink: 0 }}
+              style={{ color: style.color, fontSize: "16px", flexShrink: 0, display: "flex", alignItems: "center" }}
             >
-              {style.icon}
+              {TOAST_ICONS[toast.type]}
             </span>
             <span style={{ color: "#e4e4e7", fontSize: "13px", flex: 1 }}>
               {toast.message}
@@ -187,12 +191,13 @@ function ToastContainer({
                 border: "none",
                 color: "#71717a",
                 cursor: "pointer",
-                fontSize: "14px",
                 padding: "2px",
+                display: "flex",
+                alignItems: "center",
                 flexShrink: 0,
               }}
             >
-              ✕
+              <XCircle size={14} />
             </button>
           </div>
         );

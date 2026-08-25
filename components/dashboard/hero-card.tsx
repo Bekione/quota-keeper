@@ -1,5 +1,6 @@
 'use client';
 
+import { CheckCircle, Clock } from 'lucide-react';
 import { Account } from '@/types/account';
 import { useCountdown, formatCountdown } from '@/hooks/useCountdown';
 
@@ -69,7 +70,9 @@ export default function HeroCard({ accounts }: HeroCardProps) {
                     fontWeight: 500,
                   }}
                 >
-                  ✓ Ready to use
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                    <CheckCircle size={14} /> Ready to use
+                  </span>
                 </div>
               </>
             ) : (
@@ -102,7 +105,9 @@ export default function HeroCard({ accounts }: HeroCardProps) {
                       fontWeight: 500,
                     }}
                   >
-                    ⏱ {formatCountdown(countdown)}
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                      <Clock size={14} /> {formatCountdown(countdown)}
+                    </span>
                   </div>
                 </div>
               </>

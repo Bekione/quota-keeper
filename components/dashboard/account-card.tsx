@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Copy, Check, Lock, LockOpen, Globe } from "lucide-react";
 import { Account, PROVIDER_COLORS, AccountProvider } from "@/types/account";
 import { useCountdown, formatCountdown } from "@/hooks/useCountdown";
 import { unlockAccount } from "@/lib/services/account-service";
@@ -28,9 +29,12 @@ export default function AccountCard({
     return "#fca5a5";
   };
 
-  const getStatusLabel = (status: string) => {
-    return status === "AVAILABLE" ? "✓ Available" : "⏱ Locked";
-  };
+  const getStatusLabel = (status: string) => (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+      {status === "AVAILABLE" ? <LockOpen size={10} /> : <Lock size={10} />}
+      {status === "AVAILABLE" ? "Available" : "Locked"}
+    </span>
+  );
 
   const handleCopyEmail = async () => {
     try {
@@ -141,13 +145,14 @@ export default function AccountCard({
                 border: "none",
                 cursor: "pointer",
                 padding: "2px",
-                fontSize: "12px",
+                display: "flex",
+                alignItems: "center",
                 color: copied ? "#86efac" : "#71717a",
                 transition: "color 0.2s",
                 flexShrink: 0,
               }}
             >
-              {copied ? "✓" : "📋"}
+              {copied ? <Check size={12} /> : <Copy size={12} />}
             </button>
           </div>
         </div>
@@ -180,18 +185,22 @@ export default function AccountCard({
 
       {/* Chrome Profile */}
       {account.chrome_profile && (
-        <p
-          style={{
-            fontSize: "12px",
-            color: "#a1a1aa",
-            margin: 0,
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-          }}
-        >
-          Profile: {account.chrome_profile}
-        </p>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <Globe size={11} style={{ color: "#71717a", flexShrink: 0 }} />
+          <p
+            style={{
+              fontSize: "12px",
+              color: "#a1a1aa",
+              margin: 0,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              flex: 1,
+            }}
+          >
+            {account.chrome_profile}
+          </p>
+        </div>
       )}
 
       {/* Countdown or Locked Date */}

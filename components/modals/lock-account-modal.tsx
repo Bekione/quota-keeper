@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { format, addDays } from "date-fns";
 import { Account } from "@/types/account";
 import { lockAccount } from "@/lib/services/account-service";
-import { addDays } from "date-fns";
 
 interface LockAccountModalProps {
   isOpen: boolean;
@@ -13,6 +13,12 @@ interface LockAccountModalProps {
   onSuccess?: () => void;
 }
 
+const PRESET_DAYS = [1, 3, 7, 14, 30];
+
+function dateOffsetDays(days: number): string {
+  return format(addDays(new Date(), days), "yyyy-MM-dd");
+}
+
 export default function LockAccountModal({
   isOpen,
   account,
@@ -20,10 +26,8 @@ export default function LockAccountModal({
   onClose,
   onSuccess,
 }: LockAccountModalProps) {
-  const [duration, setDuration] = useState(defaultLockDuration);
   const [customDate, setCustomDate] = useState("");
-  const [customTime, setCustomTime] = useState("");
-  const [useCustom, setUseCustom] = useState(false);
+  const [customTime, setCustomTime] = useState("00:00");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -34,40 +38,34 @@ export default function LockAccountModal({
       setError("");
 
       if (account.status === "LOCKED" && account.unlock_at) {
-        // Pre-fill with existing unlock date/time for editing
+        // Pre-fill with existing unlock date/time when editing
         const existingDate = new Date(account.unlock_at);
-        setCustomDate(existingDate.toISOString().split("T")[0]);
-        const hours = existingDate.getHours().toString().padStart(2, "0");
-        const minutes = existingDate.getMinutes().toString().padStart(2, "0");
-        setCustomTime(`${hours}:${minutes}`);
-        setUseCustom(true);
+        setCustomDate(format(existingDate, "yyyy-MM-dd"));
+        setCustomTime(format(existingDate, "HH:mm"));
       } else {
-        // Default for new lock
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        setCustomDate(tomorrow.toISOString().split("T")[0]);
+        // New lock: default to N days from now at midnight
+        setCustomDate(dateOffsetDays(defaultLockDuration));
         setCustomTime("00:00");
-        setUseCustom(false);
       }
     }
-  }, [isOpen, account]);
+  }, [isOpen, account, defaultLockDuration]);
 
   if (!isOpen || !account) return null;
 
-  const unlockDate = useCustom
-    ? new Date(`${customDate}T${customTime}`)
-    : addDays(new Date(), duration);
+  const unlockDate =
+    customDate && customTime
+      ? new Date(`${customDate}T${customTime}`)
+      : new Date();
+
+  const isValidDate = !isNaN(unlockDate.getTime()) && unlockDate > new Date();
 
   async function handleLock() {
-    if (!account) return;
+    if (!account || !isValidDate) return;
     setError("");
     setLoading(true);
 
     try {
-      const success = await lockAccount(account.id, {
-        unlock_at: unlockDate,
-      });
-
+      const success = await lockAccount(account.id, { unlock_at: unlockDate });
       if (success) {
         onSuccess?.();
         onClose();
@@ -100,225 +98,214 @@ export default function LockAccountModal({
           border: "1px solid #2a2a2a",
           borderRadius: "12px",
           padding: "32px",
-          maxWidth: "500px",
+          maxWidth: "480px",
           width: "90%",
+          display: "flex",
+          flexDirection: "column",
+          gap: "20px",
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2
-          style={{
-            fontSize: "24px",
-            fontWeight: 700,
-            marginBottom: "8px",
-            color: isEditMode ? "#fbbf24" : "#fca5a5",
-          }}
-        >
-          {isEditMode ? "Edit Lock" : "Lock Account"}
-        </h2>
-        <p
-          style={{
-            color: "#a1a1aa",
-            fontSize: "14px",
-            marginBottom: "24px",
-            margin: 0,
-          }}
-        >
-          {account.name}
-        </p>
+        {/* Header */}
+        <div>
+          <h2
+            style={{
+              fontSize: "20px",
+              fontWeight: 700,
+              marginBottom: "4px",
+              color: isEditMode ? "#fbbf24" : "#fca5a5",
+            }}
+          >
+            {isEditMode ? "Edit Lock" : "Lock Account"}
+          </h2>
+          <p style={{ color: "#a1a1aa", fontSize: "14px", margin: 0 }}>
+            {account.name}
+          </p>
+        </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          {/* Quick Duration Options — only show for new locks */}
-          {!isEditMode && (
-            <div>
-              <label
-                style={{
-                  display: "block",
-                  fontSize: "14px",
-                  fontWeight: 500,
-                  marginBottom: "12px",
-                }}
-              >
-                Lock Duration
-              </label>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(3, 1fr)",
-                  gap: "8px",
-                }}
-              >
-                {[1, 3, 7].map((days) => (
+        {/* Quick preset buttons — only for new locks */}
+        {!isEditMode && (
+          <div>
+            <label
+              style={{
+                display: "block",
+                fontSize: "13px",
+                fontWeight: 500,
+                color: "#71717a",
+                marginBottom: "10px",
+              }}
+            >
+              Quick fill date
+            </label>
+            <div
+              style={{
+                display: "flex",
+                gap: "8px",
+                flexWrap: "wrap",
+              }}
+            >
+              {PRESET_DAYS.map((days) => {
+                const isActive = customDate === dateOffsetDays(days);
+                return (
                   <button
                     key={days}
                     type="button"
-                    onClick={() => {
-                      setDuration(days);
-                      setUseCustom(false);
-                    }}
+                    onClick={() => setCustomDate(dateOffsetDays(days))}
                     style={{
-                      padding: "10px 8px",
-                      backgroundColor:
-                        !useCustom && duration === days ? "#dbfe01" : "#2a2a2a",
-                      color:
-                        !useCustom && duration === days ? "#000000" : "#ffffff",
-                      border: "none",
+                      padding: "8px 14px",
+                      backgroundColor: isActive ? "#dbfe01" : "#2a2a2a",
+                      color: isActive ? "#000000" : "#ffffff",
+                      border: isActive
+                        ? "1px solid #dbfe01"
+                        : "1px solid #3a3a3a",
                       borderRadius: "6px",
-                      fontSize: "14px",
-                      fontWeight: 500,
+                      fontSize: "13px",
+                      fontWeight: 600,
                       cursor: "pointer",
+                      transition: "all 0.15s",
                     }}
                   >
                     {days}d
                   </button>
-                ))}
-              </div>
+                );
+              })}
             </div>
-          )}
-
-          {/* Custom Date & Time */}
-          <div>
-            {!isEditMode && (
-              <label
-                style={{
-                  display: "block",
-                  fontSize: "14px",
-                  fontWeight: 500,
-                  marginBottom: "8px",
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={useCustom}
-                  onChange={(e) => setUseCustom(e.target.checked)}
-                  style={{ marginRight: "8px" }}
-                />
-                Custom Date & Time
-              </label>
-            )}
-            {isEditMode && (
-              <label
-                style={{
-                  display: "block",
-                  fontSize: "14px",
-                  fontWeight: 500,
-                  marginBottom: "8px",
-                }}
-              >
-                Unlock Date & Time
-              </label>
-            )}
-            {(useCustom || isEditMode) && (
-              <div style={{ display: "flex", gap: "8px" }}>
-                <input
-                  type="date"
-                  value={customDate}
-                  onChange={(e) => setCustomDate(e.target.value)}
-                  style={{
-                    flex: 1,
-                    padding: "10px 12px",
-                    backgroundColor: "#0d0d0d",
-                    border: "1px solid #2a2a2a",
-                    borderRadius: "6px",
-                    color: "#ffffff",
-                    fontSize: "14px",
-                    boxSizing: "border-box",
-                  }}
-                />
-                <input
-                  type="time"
-                  value={customTime}
-                  onChange={(e) => setCustomTime(e.target.value)}
-                  style={{
-                    width: "140px",
-                    padding: "10px 12px",
-                    backgroundColor: "#0d0d0d",
-                    border: "1px solid #2a2a2a",
-                    borderRadius: "6px",
-                    color: "#ffffff",
-                    fontSize: "14px",
-                    boxSizing: "border-box",
-                  }}
-                />
-              </div>
-            )}
           </div>
+        )}
 
-          {/* Preview */}
+        {/* Date & Time — always visible */}
+        <div>
+          <label
+            style={{
+              display: "block",
+              fontSize: "13px",
+              fontWeight: 500,
+              color: "#71717a",
+              marginBottom: "10px",
+            }}
+          >
+            {isEditMode ? "Unlock date & time" : "Set exact unlock date & time"}
+          </label>
+          <div style={{ display: "flex", gap: "8px" }}>
+            <input
+              type="date"
+              value={customDate}
+              onChange={(e) => setCustomDate(e.target.value)}
+              style={{
+                flex: 1,
+                padding: "10px 12px",
+                backgroundColor: "#0d0d0d",
+                border: "1px solid #2a2a2a",
+                borderRadius: "6px",
+                color: "#ffffff",
+                fontSize: "14px",
+                boxSizing: "border-box",
+                colorScheme: "dark",
+              }}
+            />
+            <input
+              type="time"
+              value={customTime}
+              onChange={(e) => setCustomTime(e.target.value)}
+              style={{
+                width: "130px",
+                padding: "10px 12px",
+                backgroundColor: "#0d0d0d",
+                border: "1px solid #2a2a2a",
+                borderRadius: "6px",
+                color: "#ffffff",
+                fontSize: "14px",
+                boxSizing: "border-box",
+                colorScheme: "dark",
+              }}
+            />
+          </div>
+         
+        </div>
+
+        {/* Preview */}
+        <div
+          style={{
+            padding: "12px 14px",
+            backgroundColor: "#0d0d0d",
+            border: `1px solid ${isValidDate ? "#2a2a2a" : "rgba(239,68,68,0.3)"}`,
+            borderRadius: "6px",
+            fontSize: "13px",
+          }}
+        >
+          <p style={{ margin: "0 0 2px 0", color: "#71717a" }}>
+            Unlock scheduled for:
+          </p>
+          <p
+            style={{
+              margin: 0,
+              color: isValidDate ? "#dbfe01" : "#fca5a5",
+              fontWeight: 600,
+              fontSize: "14px",
+            }}
+          >
+            {isValidDate
+              ? unlockDate.toLocaleString()
+              : "Invalid or past date — please adjust"}
+          </p>
+        </div>
+
+        {/* Error */}
+        {error && (
           <div
             style={{
               padding: "12px",
-              backgroundColor: "#0d0d0d",
-              border: "1px solid #2a2a2a",
+              backgroundColor: "rgba(239, 68, 68, 0.1)",
+              border: "1px solid rgba(239, 68, 68, 0.3)",
               borderRadius: "6px",
+              color: "#fca5a5",
               fontSize: "14px",
-              color: "#a1a1aa",
             }}
           >
-            <p style={{ margin: "0 0 4px 0" }}>Unlock Date:</p>
-            <p style={{ margin: 0, color: "#dbfe01", fontWeight: 600 }}>
-              {unlockDate.toLocaleString()}
-            </p>
+            {error}
           </div>
+        )}
 
-          {error && (
-            <div
-              style={{
-                padding: "12px",
-                backgroundColor: "rgba(239, 68, 68, 0.1)",
-                border: "1px solid rgba(239, 68, 68, 0.3)",
-                borderRadius: "6px",
-                color: "#fca5a5",
-                fontSize: "14px",
-              }}
-            >
-              {error}
-            </div>
-          )}
-
-          <div style={{ display: "flex", gap: "8px", marginTop: "16px" }}>
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={loading}
-              style={{
-                flex: 1,
-                padding: "10px 16px",
-                backgroundColor: "#2a2a2a",
-                color: "#ffffff",
-                border: "none",
-                borderRadius: "6px",
-                fontWeight: 600,
-                fontSize: "14px",
-                cursor: "pointer",
-                opacity: loading ? 0.5 : 1,
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleLock}
-              disabled={loading}
-              style={{
-                flex: 1,
-                padding: "10px 16px",
-                backgroundColor: isEditMode ? "#fbbf24" : "#fca5a5",
-                color: isEditMode ? "#78350f" : "#7f1d1d",
-                border: "none",
-                borderRadius: "6px",
-                fontWeight: 600,
-                fontSize: "14px",
-                cursor: "pointer",
-                opacity: loading ? 0.5 : 1,
-              }}
-            >
-              {loading
-                ? "Saving..."
-                : isEditMode
-                  ? "Update Lock"
-                  : "Lock Account"}
-            </button>
-          </div>
+        {/* Actions */}
+        <div style={{ display: "flex", gap: "8px" }}>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={loading}
+            style={{
+              flex: 1,
+              padding: "10px 16px",
+              backgroundColor: "#2a2a2a",
+              color: "#ffffff",
+              border: "none",
+              borderRadius: "6px",
+              fontWeight: 600,
+              fontSize: "14px",
+              cursor: "pointer",
+              opacity: loading ? 0.5 : 1,
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleLock}
+            disabled={loading || !isValidDate}
+            style={{
+              flex: 1,
+              padding: "10px 16px",
+              backgroundColor: isEditMode ? "#fbbf24" : "#fca5a5",
+              color: isEditMode ? "#78350f" : "#7f1d1d",
+              border: "none",
+              borderRadius: "6px",
+              fontWeight: 600,
+              fontSize: "14px",
+              cursor: loading || !isValidDate ? "not-allowed" : "pointer",
+              opacity: loading || !isValidDate ? 0.5 : 1,
+            }}
+          >
+            {loading ? "Saving..." : isEditMode ? "Update Lock" : "Lock Account"}
+          </button>
         </div>
       </div>
     </div>

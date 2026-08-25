@@ -72,7 +72,7 @@ export class AutoUnlockService {
       const registration = await navigator.serviceWorker?.ready;
       if (registration) {
         await registration.showNotification("QuotaKeeper", {
-          body: `🔓 ${accountName} is now available!`,
+          body: `${accountName} is now available!`,
           icon: "/android-chrome-192x192.png",
           badge: "/android-chrome-192x192.png",
           tag: `unlock-${accountName}`,
@@ -81,7 +81,7 @@ export class AutoUnlockService {
       } else {
         // Fallback to basic Notification API
         new Notification("QuotaKeeper", {
-          body: `🔓 ${accountName} is now available!`,
+          body: `${accountName} is now available!`,
           icon: "/android-chrome-192x192.png",
           tag: `unlock-${accountName}`,
         });

@@ -1,13 +1,16 @@
 "use client";
 
-import { Account } from "@/types/account";
+import { useState } from "react";
+import { Account, PROVIDER_COLORS, AccountProvider } from "@/types/account";
 import { useCountdown, formatCountdown } from "@/hooks/useCountdown";
+import { unlockAccount } from "@/lib/services/account-service";
 
 interface AccountCardProps {
   account: Account;
   onEdit?: () => void;
   onDelete?: () => void;
   onLock?: () => void;
+  onUnlock?: () => void;
 }
 
 export default function AccountCard({
@@ -15,8 +18,10 @@ export default function AccountCard({
   onEdit,
   onDelete,
   onLock,
+  onUnlock,
 }: AccountCardProps) {
   const countdown = useCountdown(account.unlock_at);
+  const [copied, setCopied] = useState(false);
 
   const getStatusColor = (status: string) => {
     if (status === "AVAILABLE") return "#86efac";
@@ -26,6 +31,28 @@ export default function AccountCard({
   const getStatusLabel = (status: string) => {
     return status === "AVAILABLE" ? "✓ Available" : "⏱ Locked";
   };
+
+  const handleCopyEmail = async () => {
+    try {
+      await navigator.clipboard.writeText(account.email);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // Fallback for older browsers
+      const textarea = document.createElement("textarea");
+      textarea.value = account.email;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    }
+  };
+
+  const providerColor = account.provider
+    ? PROVIDER_COLORS[account.provider as AccountProvider] || "#a1a1aa"
+    : null;
 
   return (
     <div
@@ -48,26 +75,81 @@ export default function AccountCard({
           alignItems: "flex-start",
         }}
       >
-        <div>
-          <h3
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div
             style={{
-              fontSize: "16px",
-              fontWeight: 600,
-              margin: "0 0 4px 0",
-              color: "#ffffff",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              flexWrap: "wrap",
             }}
           >
-            {account.name}
-          </h3>
-          <p
+            <h3
+              style={{
+                fontSize: "16px",
+                fontWeight: 600,
+                margin: "0",
+                color: "#ffffff",
+              }}
+            >
+              {account.name}
+            </h3>
+            {/* Provider Badge */}
+            {account.provider && (
+              <span
+                style={{
+                  fontSize: "10px",
+                  fontWeight: 600,
+                  padding: "2px 8px",
+                  borderRadius: "99px",
+                  backgroundColor: `${providerColor}15`,
+                  color: providerColor || "#a1a1aa",
+                  border: `1px solid ${providerColor}40`,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {account.provider}
+              </span>
+            )}
+          </div>
+          {/* Email with copy button */}
+          <div
             style={{
-              fontSize: "12px",
-              color: "#a1a1aa",
-              margin: 0,
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              marginTop: "4px",
             }}
           >
-            {account.email}
-          </p>
+            <p
+              style={{
+                fontSize: "12px",
+                color: "#a1a1aa",
+                margin: 0,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {account.email}
+            </p>
+            <button
+              onClick={handleCopyEmail}
+              title="Copy email"
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: "2px",
+                fontSize: "12px",
+                color: copied ? "#86efac" : "#71717a",
+                transition: "color 0.2s",
+                flexShrink: 0,
+              }}
+            >
+              {copied ? "✓" : "📋"}
+            </button>
+          </div>
         </div>
 
         {/* Status Badge */}
@@ -88,6 +170,8 @@ export default function AccountCard({
             fontSize: "12px",
             fontWeight: 500,
             whiteSpace: "nowrap",
+            flexShrink: 0,
+            marginLeft: "8px",
           }}
         >
           {getStatusLabel(account.status)}
@@ -179,15 +263,15 @@ export default function AccountCard({
             Edit
           </button>
         )}
-        {onLock && (
+        {/* Lock / Unlock Now / Edit Lock */}
+        {account.status === "AVAILABLE" && onLock && (
           <button
             onClick={onLock}
             style={{
               flex: 1,
               padding: "8px 12px",
-              backgroundColor:
-                account.status === "LOCKED" ? "#fbbf24" : "#fca5a5",
-              color: account.status === "LOCKED" ? "#78350f" : "#7f1d1d",
+              backgroundColor: "#fca5a5",
+              color: "#7f1d1d",
               border: "none",
               borderRadius: "4px",
               fontSize: "12px",
@@ -195,8 +279,48 @@ export default function AccountCard({
               cursor: "pointer",
             }}
           >
-            {account.status === "LOCKED" ? "Edit Lock" : "Lock"}
+            Lock
           </button>
+        )}
+        {account.status === "LOCKED" && (
+          <>
+            {onUnlock && (
+              <button
+                onClick={onUnlock}
+                style={{
+                  flex: 1,
+                  padding: "8px 12px",
+                  backgroundColor: "#86efac",
+                  color: "#14532d",
+                  border: "none",
+                  borderRadius: "4px",
+                  fontSize: "12px",
+                  fontWeight: 500,
+                  cursor: "pointer",
+                }}
+              >
+                Unlock Now
+              </button>
+            )}
+            {onLock && (
+              <button
+                onClick={onLock}
+                style={{
+                  flex: 1,
+                  padding: "8px 12px",
+                  backgroundColor: "#fbbf24",
+                  color: "#78350f",
+                  border: "none",
+                  borderRadius: "4px",
+                  fontSize: "12px",
+                  fontWeight: 500,
+                  cursor: "pointer",
+                }}
+              >
+                Edit Lock
+              </button>
+            )}
+          </>
         )}
         {onDelete && (
           <button

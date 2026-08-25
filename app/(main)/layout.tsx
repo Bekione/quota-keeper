@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import SyncIndicator from "@/components/sync-indicator";
 import Header from "@/components/header";
+import { ToastProvider } from "@/components/toast";
 import { startSyncManager } from "@/lib/sync/sync-manager";
 import { startAutoUnlock } from "@/lib/services/auto-unlock";
 
@@ -25,26 +26,28 @@ export default function MainLayout({ children }: { children: ReactNode }) {
   }, [authenticated]);
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        backgroundColor: "#0d0d0d",
-        color: "#ffffff",
-      }}
-    >
-      <Header
-        onImportExport={() => {
-          window.dispatchEvent(
-            new CustomEvent("quotakeeper:open-import-export"),
-          );
+    <ToastProvider>
+      <div
+        style={{
+          minHeight: "100vh",
+          backgroundColor: "#0d0d0d",
+          color: "#ffffff",
         }}
-      />
-      <SyncIndicator />
-      <main
-        style={{ maxWidth: "1400px", margin: "0 auto", padding: "32px 16px" }}
       >
-        {children}
-      </main>
-    </div>
+        <Header
+          onImportExport={() => {
+            window.dispatchEvent(
+              new CustomEvent("quotakeeper:open-import-export"),
+            );
+          }}
+        />
+        <SyncIndicator />
+        <main
+          style={{ maxWidth: "1400px", margin: "0 auto", padding: "32px 16px" }}
+        >
+          {children}
+        </main>
+      </div>
+    </ToastProvider>
   );
 }

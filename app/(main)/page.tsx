@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import HeroCard from "@/components/dashboard/hero-card";
 import AccountsList from "@/components/dashboard/accounts-list";
 import SearchFilter from "@/components/dashboard/search-filter";
@@ -12,7 +12,8 @@ import DeleteConfirmation from "@/components/modals/delete-confirmation";
 import ImportExportModal from "@/components/modals/import-export-modal";
 import { useAccounts } from "@/hooks/useAccounts";
 import { useModal } from "@/hooks/useModal";
-import { Account } from "@/types/account";
+import { Account, AccountProvider } from "@/types/account";
+import { unlockAccount } from "@/lib/services/account-service";
 
 export default function Dashboard() {
   const { accounts, loading, refetch } = useAccounts();
@@ -20,7 +21,18 @@ export default function Dashboard() {
   const [filterStatus, setFilterStatus] = useState<
     "all" | "available" | "locked"
   >("all");
+  const [filterProvider, setFilterProvider] = useState<AccountProvider | "all">(
+    "all",
+  );
   const [filteredAccounts, setFilteredAccounts] = useState<Account[]>([]);
+
+  const handleUnlock = useCallback(
+    async (account: Account) => {
+      await unlockAccount(account.id);
+      refetch();
+    },
+    [refetch],
+  );
 
   // Modal states
   const addModal = useModal();
@@ -53,6 +65,11 @@ export default function Dashboard() {
       filtered = filtered.filter((acc) => acc.status === "LOCKED");
     }
 
+    // Filter by provider
+    if (filterProvider !== "all") {
+      filtered = filtered.filter((acc) => acc.provider === filterProvider);
+    }
+
     // Filter by search query
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -77,7 +94,43 @@ export default function Dashboard() {
     });
 
     setFilteredAccounts(filtered);
-  }, [accounts, searchQuery, filterStatus]);
+  }, [accounts, searchQuery, filterStatus, filterProvider]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      const isTyping =
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable;
+
+      if (e.key === "Escape") {
+        addModal.close();
+        editModal.close();
+        lockModal.close();
+        deleteModal.close();
+        importExportModal.close();
+        return;
+      }
+
+      if (isTyping) return;
+
+      if (e.key === "/" || (e.ctrlKey && e.key === "k")) {
+        e.preventDefault();
+        const searchInput = document.querySelector<HTMLInputElement>(
+          'input[placeholder*="Search"]',
+        );
+        searchInput?.focus();
+      } else if (e.key === "n" || e.key === "N") {
+        e.preventDefault();
+        addModal.open();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [addModal, editModal, lockModal, deleteModal, importExportModal]);
 
   if (loading) {
     return (
@@ -118,6 +171,8 @@ export default function Dashboard() {
             onSearchChange={setSearchQuery}
             filterStatus={filterStatus}
             onFilterChange={setFilterStatus}
+            filterProvider={filterProvider}
+            onProviderChange={setFilterProvider}
           />
         </div>
         <button
@@ -168,6 +223,7 @@ export default function Dashboard() {
           onEdit={(account) => editModal.open(account)}
           onLock={(account) => lockModal.open(account)}
           onDelete={(account) => deleteModal.open(account)}
+          onUnlock={handleUnlock}
         />
       )}
 

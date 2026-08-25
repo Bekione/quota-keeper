@@ -35,6 +35,12 @@ export class QuotaKeeperDB extends Dexie {
       accounts: "id, email, unlock_at",
       syncQueue: "id, entityId, timestamp",
     });
+
+    // v4: Add provider index to accounts
+    this.version(4).stores({
+      accounts: "id, email, unlock_at, provider",
+      syncQueue: "id, entityId, timestamp",
+    });
   }
 }
 

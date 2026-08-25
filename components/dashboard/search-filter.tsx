@@ -1,10 +1,14 @@
-'use client';
+"use client";
+
+import { PROVIDERS, AccountProvider } from "@/types/account";
 
 interface SearchFilterProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
-  filterStatus: 'all' | 'available' | 'locked';
-  onFilterChange: (status: 'all' | 'available' | 'locked') => void;
+  filterStatus: "all" | "available" | "locked";
+  onFilterChange: (status: "all" | "available" | "locked") => void;
+  filterProvider?: AccountProvider | "all";
+  onProviderChange?: (provider: AccountProvider | "all") => void;
 }
 
 export default function SearchFilter({
@@ -12,43 +16,48 @@ export default function SearchFilter({
   onSearchChange,
   filterStatus,
   onFilterChange,
+  filterProvider = "all",
+  onProviderChange,
 }: SearchFilterProps) {
-  const filterOptions: Array<{ value: 'all' | 'available' | 'locked'; label: string }> = [
-    { value: 'all', label: 'All' },
-    { value: 'available', label: 'Available' },
-    { value: 'locked', label: 'Locked' },
+  const filterOptions: Array<{
+    value: "all" | "available" | "locked";
+    label: string;
+  }> = [
+    { value: "all", label: "All" },
+    { value: "available", label: "Available" },
+    { value: "locked", label: "Locked" },
   ];
 
   return (
     <div
       style={{
-        display: 'flex',
-        gap: '16px',
-        flexWrap: 'wrap',
-        alignItems: 'center',
+        display: "flex",
+        gap: "16px",
+        flexWrap: "wrap",
+        alignItems: "center",
       }}
     >
       <input
         type="text"
-        placeholder="Search by name or email..."
+        placeholder="Search by name or email... (press / to focus)"
         value={searchQuery}
         onChange={(e) => onSearchChange(e.target.value)}
         style={{
           flex: 1,
-          minWidth: '250px',
-          padding: '10px 16px',
-          backgroundColor: '#171717',
-          border: '1px solid #2a2a2a',
-          borderRadius: '8px',
-          color: '#ffffff',
-          fontSize: '14px',
+          minWidth: "250px",
+          padding: "10px 16px",
+          backgroundColor: "#171717",
+          border: "1px solid #2a2a2a",
+          borderRadius: "8px",
+          color: "#ffffff",
+          fontSize: "14px",
         }}
       />
 
       <div
         style={{
-          display: 'flex',
-          gap: '8px',
+          display: "flex",
+          gap: "8px",
         }}
       >
         {filterOptions.map((option) => (
@@ -56,24 +65,27 @@ export default function SearchFilter({
             key={option.value}
             onClick={() => onFilterChange(option.value)}
             style={{
-              padding: '8px 16px',
-              backgroundColor: filterStatus === option.value ? '#dbfe01' : '#2a2a2a',
-              color: filterStatus === option.value ? '#000000' : '#ffffff',
-              border: 'none',
-              borderRadius: '6px',
-              fontSize: '14px',
+              padding: "8px 16px",
+              backgroundColor:
+                filterStatus === option.value ? "#dbfe01" : "#2a2a2a",
+              color: filterStatus === option.value ? "#000000" : "#ffffff",
+              border: "none",
+              borderRadius: "6px",
+              fontSize: "14px",
               fontWeight: 500,
-              cursor: 'pointer',
-              transition: 'all 0.2s',
+              cursor: "pointer",
+              transition: "all 0.2s",
             }}
             onMouseEnter={(e) => {
               if (filterStatus !== option.value) {
-                (e.target as HTMLButtonElement).style.backgroundColor = '#3a3a3a';
+                (e.target as HTMLButtonElement).style.backgroundColor =
+                  "#3a3a3a";
               }
             }}
             onMouseLeave={(e) => {
               if (filterStatus !== option.value) {
-                (e.target as HTMLButtonElement).style.backgroundColor = '#2a2a2a';
+                (e.target as HTMLButtonElement).style.backgroundColor =
+                  "#2a2a2a";
               }
             }}
           >
@@ -81,6 +93,33 @@ export default function SearchFilter({
           </button>
         ))}
       </div>
+
+      {/* Provider Filter */}
+      {onProviderChange && (
+        <select
+          value={filterProvider}
+          onChange={(e) =>
+            onProviderChange(e.target.value as AccountProvider | "all")
+          }
+          style={{
+            padding: "8px 12px",
+            backgroundColor: "#2a2a2a",
+            color: "#ffffff",
+            border: "1px solid #3a3a3a",
+            borderRadius: "6px",
+            fontSize: "14px",
+            cursor: "pointer",
+            outline: "none",
+          }}
+        >
+          <option value="all">All Providers</option>
+          {PROVIDERS.map((p) => (
+            <option key={p} value={p}>
+              {p}
+            </option>
+          ))}
+        </select>
+      )}
     </div>
   );
 }

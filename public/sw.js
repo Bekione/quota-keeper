@@ -113,3 +113,25 @@ self.addEventListener("message", (event) => {
     self.skipWaiting();
   }
 });
+
+// Handle notification clicks — focus or open the app
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+
+  const targetUrl = event.notification.data?.url || "/";
+
+  event.waitUntil(
+    self.clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then((clientList) => {
+        // Focus existing window if open
+        for (const client of clientList) {
+          if (client.url.includes(self.location.origin) && "focus" in client) {
+            return client.focus();
+          }
+        }
+        // Otherwise open new window
+        return self.clients.openWindow(targetUrl);
+      }),
+  );
+});

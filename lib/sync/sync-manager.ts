@@ -9,6 +9,7 @@ import {
 } from "./queue";
 import { db } from "@/lib/db/dexie";
 import { SyncState } from "@/types/sync";
+import { showToast } from "@/components/toast";
 
 export class SyncManager {
   private static instance: SyncManager;
@@ -215,12 +216,21 @@ export class SyncManager {
 
           if (isNetworkError) {
             networkErrorEncountered = true;
-            break; // Stop loop immediately without incrementing retries or deleting operation
+            showToast({
+              type: "warning",
+              message: "Connection lost during sync. Changes saved locally.",
+            });
+            break;
           } else {
             // Data or permission error — increment retry count
             await updateSyncOperation(operation.id, {
               retries: operation.retries + 1,
               lastError: String(error?.message || error),
+            });
+            showToast({
+              type: "error",
+              message: `Sync failed: ${error?.message || "Unknown error"}`,
+              action: { label: "Retry", onClick: () => this.forceSync() },
             });
           }
         }
@@ -252,6 +262,11 @@ export class SyncManager {
         status: !navigator.onLine ? "offline" : "error",
         queueSize,
         error: String(error),
+      });
+      showToast({
+        type: "error",
+        message: "Sync failed unexpectedly.",
+        action: { label: "Retry", onClick: () => this.forceSync() },
       });
     }
   }

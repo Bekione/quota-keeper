@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { getAllAccounts, unlockAccount } from './account-service';
-import { useSettings } from '@/components/modals/settings-modal';
+import { getAllAccounts, unlockAccount } from "./account-service";
+import { showToast } from "@/components/toast";
 
 export class AutoUnlockService {
   private static instance: AutoUnlockService;
@@ -22,7 +22,10 @@ export class AutoUnlockService {
       return; // Already running
     }
 
-    console.log('[QuotaKeeper] Starting auto-unlock service');
+    console.log("[QuotaKeeper] Starting auto-unlock service");
+
+    // Request notification permission
+    this.requestNotificationPermission();
 
     // Check immediately
     this.checkForUnlock();
@@ -38,7 +41,54 @@ export class AutoUnlockService {
       clearInterval(this.interval);
       this.interval = null;
     }
-    console.log('[QuotaKeeper] Auto-unlock service stopped');
+    console.log("[QuotaKeeper] Auto-unlock service stopped");
+  }
+
+  private async requestNotificationPermission(): Promise<void> {
+    if (typeof window === "undefined" || !("Notification" in window)) {
+      return;
+    }
+
+    if (Notification.permission === "granted") {
+      return;
+    }
+
+    if (Notification.permission !== "denied") {
+      try {
+        await Notification.requestPermission();
+      } catch {
+        console.warn("[QuotaKeeper] Notification permission request failed");
+      }
+    }
+  }
+
+  private async sendNotification(accountName: string): Promise<void> {
+    if (typeof window === "undefined") return;
+    if (Notification.permission !== "granted") return;
+
+    try {
+      // Use ServiceWorker-based notification for PWA reliability
+      // This works even when the app tab is in background/minimized
+      const registration = await navigator.serviceWorker?.ready;
+      if (registration) {
+        await registration.showNotification("QuotaKeeper", {
+          body: `🔓 ${accountName} is now available!`,
+          icon: "/android-chrome-192x192.png",
+          badge: "/android-chrome-192x192.png",
+          tag: `unlock-${accountName}`,
+          data: { url: "/" },
+        });
+      } else {
+        // Fallback to basic Notification API
+        new Notification("QuotaKeeper", {
+          body: `🔓 ${accountName} is now available!`,
+          icon: "/android-chrome-192x192.png",
+          tag: `unlock-${accountName}`,
+        });
+      }
+    } catch {
+      console.warn("[QuotaKeeper] Failed to send notification");
+    }
   }
 
   private async checkForUnlock(): Promise<void> {
@@ -52,16 +102,21 @@ export class AutoUnlockService {
 
       for (const account of accounts) {
         if (
-          account.status === 'LOCKED' &&
+          account.status === "LOCKED" &&
           account.unlock_at &&
           new Date(account.unlock_at) <= now
         ) {
-          console.log('[QuotaKeeper] Auto-unlocking account:', account.name);
+          console.log("[QuotaKeeper] Auto-unlocking account:", account.name);
           await unlockAccount(account.id);
+          this.sendNotification(account.name);
+          showToast({
+            type: "success",
+            message: `${account.name} has been unlocked!`,
+          });
         }
       }
     } catch (error) {
-      console.error('[QuotaKeeper] Auto-unlock error:', error);
+      console.error("[QuotaKeeper] Auto-unlock error:", error);
     }
   }
 

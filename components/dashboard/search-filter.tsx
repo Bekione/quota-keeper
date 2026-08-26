@@ -1,6 +1,24 @@
 "use client";
 
+import { ArrowUpDown } from "lucide-react";
 import { PROVIDERS, AccountProvider } from "@/types/account";
+
+export type SortOption =
+  | "default"
+  | "name"
+  | "email"
+  | "provider"
+  | "unlock"
+  | "recent";
+
+const SORT_LABELS: Record<SortOption, string> = {
+  default: "Default",
+  name: "Name (A–Z)",
+  email: "Email (A–Z)",
+  provider: "Provider",
+  unlock: "Unlock Time",
+  recent: "Recently Added",
+};
 
 interface SearchFilterProps {
   searchQuery: string;
@@ -9,6 +27,8 @@ interface SearchFilterProps {
   onFilterChange: (status: "all" | "available" | "locked") => void;
   filterProvider?: AccountProvider | "all";
   onProviderChange?: (provider: AccountProvider | "all") => void;
+  sortBy?: SortOption;
+  onSortChange?: (sort: SortOption) => void;
 }
 
 export default function SearchFilter({
@@ -18,6 +38,8 @@ export default function SearchFilter({
   onFilterChange,
   filterProvider = "all",
   onProviderChange,
+  sortBy = "default",
+  onSortChange,
 }: SearchFilterProps) {
   const filterOptions: Array<{
     value: "all" | "available" | "locked";
@@ -119,6 +141,39 @@ export default function SearchFilter({
             </option>
           ))}
         </select>
+      )}
+
+      {/* Sort */}
+      {onSortChange && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+          }}
+        >
+          <ArrowUpDown size={14} style={{ color: "#71717a", flexShrink: 0 }} />
+          <select
+            value={sortBy}
+            onChange={(e) => onSortChange(e.target.value as SortOption)}
+            style={{
+              padding: "8px 12px",
+              backgroundColor: "#2a2a2a",
+              color: "#ffffff",
+              border: "1px solid #3a3a3a",
+              borderRadius: "6px",
+              fontSize: "14px",
+              cursor: "pointer",
+              outline: "none",
+            }}
+          >
+            {(Object.keys(SORT_LABELS) as SortOption[]).map((key) => (
+              <option key={key} value={key}>
+                {SORT_LABELS[key]}
+              </option>
+            ))}
+          </select>
+        </div>
       )}
     </div>
   );

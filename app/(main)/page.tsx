@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import HeroCard from "@/components/dashboard/hero-card";
 import AccountsList from "@/components/dashboard/accounts-list";
-import SearchFilter from "@/components/dashboard/search-filter";
+import SearchFilter, { type SortOption } from "@/components/dashboard/search-filter";
 import StatsRow from "@/components/dashboard/stats-row";
 import AddAccountModal from "@/components/modals/add-account-modal";
 import EditAccountModal from "@/components/modals/edit-account-modal";
@@ -24,6 +24,7 @@ export default function Dashboard() {
   const [filterProvider, setFilterProvider] = useState<AccountProvider | "all">(
     "all",
   );
+  const [sortBy, setSortBy] = useState<SortOption>("default");
   const [filteredAccounts, setFilteredAccounts] = useState<Account[]>([]);
 
   const handleUnlock = useCallback(
@@ -80,21 +81,49 @@ export default function Dashboard() {
       );
     }
 
-    // Sort: Available first, then locked by unlock time
+    // Sort
     filtered.sort((a, b) => {
-      if (a.status !== b.status) {
-        return a.status === "AVAILABLE" ? -1 : 1;
+      switch (sortBy) {
+        case "name":
+          return a.name.localeCompare(b.name);
+        case "email":
+          return a.email.localeCompare(b.email);
+        case "provider":
+          return (a.provider ?? "Other").localeCompare(b.provider ?? "Other");
+        case "unlock": {
+          // Locked accounts with soonest unlock first, then available
+          if (a.status === "LOCKED" && b.status !== "LOCKED") return -1;
+          if (b.status === "LOCKED" && a.status !== "LOCKED") return 1;
+          const aT = a.unlock_at ? new Date(a.unlock_at).getTime() : 0;
+          const bT = b.unlock_at ? new Date(b.unlock_at).getTime() : 0;
+          return aT - bT;
+        }
+        case "recent":
+          return (
+            new Date(b.created_at).getTime() -
+            new Date(a.created_at).getTime()
+          );
+        case "default":
+        default:
+          // Available first, then locked by unlock time
+          if (a.status !== b.status) {
+            return a.status === "AVAILABLE" ? -1 : 1;
+          }
+          if (a.status === "LOCKED" && b.status === "LOCKED") {
+            const aUnlock = a.unlock_at
+              ? new Date(a.unlock_at).getTime()
+              : 0;
+            const bUnlock = b.unlock_at
+              ? new Date(b.unlock_at).getTime()
+              : 0;
+            return aUnlock - bUnlock;
+          }
+          return 0;
       }
-      if (a.status === "LOCKED" && b.status === "LOCKED") {
-        const aUnlock = a.unlock_at?.getTime() ?? 0;
-        const bUnlock = b.unlock_at?.getTime() ?? 0;
-        return aUnlock - bUnlock;
-      }
-      return 0;
     });
 
     setFilteredAccounts(filtered);
-  }, [accounts, searchQuery, filterStatus, filterProvider]);
+  }, [accounts, searchQuery, filterStatus, filterProvider, sortBy]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -173,6 +202,8 @@ export default function Dashboard() {
             onFilterChange={setFilterStatus}
             filterProvider={filterProvider}
             onProviderChange={setFilterProvider}
+            sortBy={sortBy}
+            onSortChange={setSortBy}
           />
         </div>
         <button

@@ -9,18 +9,20 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Auto-redirect if already authenticated (enables offline PWA access)
+  // Check if session is already valid on server
   useEffect(() => {
-    try {
-      const sessionStr = localStorage.getItem("quotakeeper_auth_session");
-      if (sessionStr) {
-        const session = JSON.parse(sessionStr);
-        if (session?.authenticated) {
-          router.replace("/");
-          return;
+    async function checkExistingAuth() {
+      try {
+        const res = await fetch("/api/auth/verify");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.authenticated) {
+            router.replace("/");
+          }
         }
-      }
-    } catch {}
+      } catch {}
+    }
+    checkExistingAuth();
   }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -29,7 +31,6 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // Read password directly from DOM input
       const password = inputRef.current?.value || "";
 
       if (!password) {
@@ -47,20 +48,12 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (data.success) {
-        const session = {
-          authenticated: true,
-          lastLogin: new Date().toISOString(),
-        };
-        localStorage.setItem(
-          "quotakeeper_auth_session",
-          JSON.stringify(session),
-        );
         router.push("/");
       } else {
-        setError("Invalid password");
+        setError(data.error || "Invalid password");
         setLoading(false);
       }
-    } catch (err) {
+    } catch {
       setError("Login failed. Please try again.");
       setLoading(false);
     }

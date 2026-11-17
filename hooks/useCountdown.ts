@@ -32,6 +32,7 @@ export function useCountdown(unlockDate: Date | undefined): CountdownTime {
     }
 
     function updateCountdown() {
+      if (!unlockDate) return;
       const now = new Date();
       const diff = unlockDate.getTime() - now.getTime();
 

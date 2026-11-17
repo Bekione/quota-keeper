@@ -1,7 +1,7 @@
 'use client';
 
 import { CheckCircle, Clock } from 'lucide-react';
-import { Account } from '@/types/account';
+import { Account, PROVIDER_COLORS, AccountProvider } from '@/types/account';
 import { useCountdown, formatCountdown } from '@/hooks/useCountdown';
 
 interface HeroCardProps {
@@ -13,10 +13,17 @@ export default function HeroCard({ accounts }: HeroCardProps) {
   const availableAccounts = accounts.filter((acc) => acc.status === 'AVAILABLE');
   const nextUnlock = accounts
     .filter((acc) => acc.status === 'LOCKED' && acc.unlock_at)
-    .sort((a, b) => (a.unlock_at?.getTime() ?? 0) - (b.unlock_at?.getTime() ?? 0))[0];
+    .sort(
+      (a, b) =>
+        new Date(a.unlock_at!).getTime() - new Date(b.unlock_at!).getTime(),
+    )[0];
 
   const primaryAccount = availableAccounts[0] || nextUnlock;
   const countdown = useCountdown(primaryAccount?.unlock_at);
+
+  const providerColor = primaryAccount?.provider
+    ? PROVIDER_COLORS[primaryAccount.provider as AccountProvider] || '#a1a1aa'
+    : null;
 
   return (
     <div
@@ -52,9 +59,27 @@ export default function HeroCard({ accounts }: HeroCardProps) {
                 <p style={{ color: '#a1a1aa', fontSize: '14px', margin: '0 0 8px 0' }}>
                   Best Available Account
                 </p>
-                <h2 style={{ fontSize: '32px', fontWeight: 700, margin: '0 0 4px 0' }}>
-                  {primaryAccount.name}
-                </h2>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', margin: '0 0 4px 0' }}>
+                  <h2 style={{ fontSize: '32px', fontWeight: 700, margin: 0 }}>
+                    {primaryAccount.name}
+                  </h2>
+                  {primaryAccount.provider && (
+                    <span
+                      style={{
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        padding: '3px 10px',
+                        borderRadius: '99px',
+                        backgroundColor: `${providerColor}18`,
+                        color: providerColor || '#a1a1aa',
+                        border: `1px solid ${providerColor}40`,
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {primaryAccount.provider}
+                    </span>
+                  )}
+                </div>
                 <p style={{ color: '#a1a1aa', fontSize: '14px', margin: '0 0 16px 0' }}>
                   {primaryAccount.email}
                 </p>
@@ -80,9 +105,27 @@ export default function HeroCard({ accounts }: HeroCardProps) {
                 <p style={{ color: '#a1a1aa', fontSize: '14px', margin: '0 0 8px 0' }}>
                   Next Available Account
                 </p>
-                <h2 style={{ fontSize: '32px', fontWeight: 700, margin: '0 0 4px 0' }}>
-                  {primaryAccount.name}
-                </h2>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', margin: '0 0 4px 0' }}>
+                  <h2 style={{ fontSize: '32px', fontWeight: 700, margin: 0 }}>
+                    {primaryAccount.name}
+                  </h2>
+                  {primaryAccount.provider && (
+                    <span
+                      style={{
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        padding: '3px 10px',
+                        borderRadius: '99px',
+                        backgroundColor: `${providerColor}18`,
+                        color: providerColor || '#a1a1aa',
+                        border: `1px solid ${providerColor}40`,
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {primaryAccount.provider}
+                    </span>
+                  )}
+                </div>
                 <p style={{ color: '#a1a1aa', fontSize: '14px', margin: '0 0 16px 0' }}>
                   {primaryAccount.email}
                 </p>
@@ -90,7 +133,8 @@ export default function HeroCard({ accounts }: HeroCardProps) {
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '8px',
+                    gap: '12px',
+                    flexWrap: 'wrap',
                   }}
                 >
                   <div
@@ -100,15 +144,20 @@ export default function HeroCard({ accounts }: HeroCardProps) {
                       backgroundColor: 'rgba(250, 204, 21, 0.1)',
                       border: '1px solid rgba(250, 204, 21, 0.3)',
                       borderRadius: '6px',
-                      color: '#faco15',
+                      color: '#facc15',
                       fontSize: '14px',
                       fontWeight: 500,
                     }}
                   >
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                      <Clock size={14} /> {formatCountdown(countdown)}
+                      <Clock size={14} /> Available in {formatCountdown(countdown)}
                     </span>
                   </div>
+                  {primaryAccount.unlock_at && (
+                    <span style={{ fontSize: '13px', color: '#a1a1aa' }}>
+                      {new Date(primaryAccount.unlock_at).toLocaleString()}
+                    </span>
+                  )}
                 </div>
               </>
             )}

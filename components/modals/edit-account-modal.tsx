@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Account, PROVIDERS, AccountProvider } from "@/types/account";
+import { Account, PROVIDERS, PROVIDER_COLORS, AccountProvider } from "@/types/account";
 import { updateAccount } from "@/lib/services/account-service";
+import CustomSelect from "@/components/ui/custom-select";
 
 interface EditAccountModalProps {
   isOpen: boolean;
@@ -135,10 +136,11 @@ export default function EditAccountModal({
                 padding: "10px 12px",
                 backgroundColor: "#0d0d0d",
                 border: "1px solid #2a2a2a",
-                borderRadius: "6px",
+                borderRadius: "8px",
                 color: "#ffffff",
                 fontSize: "14px",
                 boxSizing: "border-box",
+                outline: "none",
               }}
             />
           </div>
@@ -165,10 +167,11 @@ export default function EditAccountModal({
                 padding: "10px 12px",
                 backgroundColor: "#0d0d0d",
                 border: "1px solid #2a2a2a",
-                borderRadius: "6px",
+                borderRadius: "8px",
                 color: "#ffffff",
                 fontSize: "14px",
                 boxSizing: "border-box",
+                outline: "none",
               }}
             />
           </div>
@@ -195,10 +198,11 @@ export default function EditAccountModal({
                 padding: "10px 12px",
                 backgroundColor: "#0d0d0d",
                 border: "1px solid #2a2a2a",
-                borderRadius: "6px",
+                borderRadius: "8px",
                 color: "#ffffff",
                 fontSize: "14px",
                 boxSizing: "border-box",
+                outline: "none",
               }}
             />
           </div>
@@ -214,29 +218,27 @@ export default function EditAccountModal({
             >
               Provider
             </label>
-            <select
+            <CustomSelect
               value={formData.provider}
-              onChange={(e) =>
-                setFormData({ ...formData, provider: e.target.value })
+              onChange={(val) =>
+                setFormData({ ...formData, provider: val })
               }
-              style={{
-                width: "100%",
-                padding: "10px 12px",
+              options={[
+                { value: "", label: "Select provider (optional)" },
+                ...PROVIDERS.map((p) => ({
+                  value: p,
+                  label: p,
+                  color: PROVIDER_COLORS[p],
+                })),
+              ]}
+              fullWidth
+              placeholder="Select provider (optional)"
+              triggerStyle={{
                 backgroundColor: "#0d0d0d",
-                border: "1px solid #2a2a2a",
-                borderRadius: "6px",
-                color: "#ffffff",
-                fontSize: "14px",
-                boxSizing: "border-box" as const,
+                height: "40px",
               }}
-            >
-              <option value="">Select provider (optional)</option>
-              {PROVIDERS.map((p) => (
-                <option key={p} value={p}>
-                  {p}
-                </option>
-              ))}
-            </select>
+              ariaLabel="Select provider"
+            />
           </div>
 
           <div>
@@ -265,6 +267,7 @@ export default function EditAccountModal({
                 fontSize: "14px",
                 boxSizing: "border-box",
                 minHeight: "100px",
+                maxHeight: "200px",
                 fontFamily: "inherit",
               }}
             />
@@ -285,22 +288,30 @@ export default function EditAccountModal({
             </div>
           )}
 
-          <div style={{ display: "flex", gap: "8px", marginTop: "16px" }}>
+          <div style={{ display: "flex", gap: "10px", marginTop: "16px" }}>
             <button
               type="button"
               onClick={onClose}
               disabled={loading}
               style={{
                 flex: 1,
-                padding: "10px 16px",
-                backgroundColor: "#2a2a2a",
+                height: "40px",
+                padding: "0 16px",
+                backgroundColor: "#222222",
                 color: "#ffffff",
-                border: "none",
-                borderRadius: "6px",
+                border: "1px solid #333333",
+                borderRadius: "8px",
                 fontWeight: 600,
                 fontSize: "14px",
                 cursor: "pointer",
                 opacity: loading ? 0.5 : 1,
+                transition: "all 0.15s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "#2a2a2a";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "#222222";
               }}
             >
               Cancel
@@ -310,15 +321,17 @@ export default function EditAccountModal({
               disabled={loading}
               style={{
                 flex: 1,
-                padding: "10px 16px",
+                height: "40px",
+                padding: "0 16px",
                 backgroundColor: "#dbfe01",
                 color: "#000000",
                 border: "none",
-                borderRadius: "6px",
+                borderRadius: "8px",
                 fontWeight: 600,
                 fontSize: "14px",
                 cursor: "pointer",
                 opacity: loading ? 0.5 : 1,
+                transition: "all 0.15s ease",
               }}
             >
               {loading ? "Saving..." : "Save Changes"}

@@ -1,46 +1,38 @@
 'use client';
 
-import { db } from '@/lib/db/dexie';
 import { AuthSession } from '@/types/auth';
 
 const AUTH_SESSION_KEY = 'quotakeeper_auth_session';
-const AUTH_SESSION_DB_KEY = 'auth_session';
 
-export async function getSession(): Promise<AuthSession | null> {
-  // Get from localStorage
+export async function isAuthenticated(): Promise<boolean> {
+  if (typeof window === 'undefined') return false;
+
   try {
-    if (typeof window === 'undefined') {
-      console.log('[QuotaKeeper] Running on server, no localStorage');
-      return null;
+    const res = await fetch('/api/auth/verify', {
+      method: 'GET',
+      cache: 'no-store',
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return !!data.authenticated;
     }
-    const sessionStr = localStorage.getItem(AUTH_SESSION_KEY);
-    console.log('[QuotaKeeper] getSession called, found:', !!sessionStr);
-    if (sessionStr) {
-      const session = JSON.parse(sessionStr) as AuthSession;
-      console.log('[QuotaKeeper] Session retrieved:', session.authenticated);
-      return session;
-    }
-  } catch (error) {
-    console.error('[QuotaKeeper] Failed to parse session from localStorage', error);
-    return null;
+    // If server says unauthenticated, clear any stale storage
+    localStorage.removeItem(AUTH_SESSION_KEY);
+    return false;
+  } catch {
+    return false;
   }
-
-  console.log('[QuotaKeeper] No session found in localStorage');
-  return null;
 }
 
 export async function setSession(session: AuthSession): Promise<void> {
-  // Store in localStorage
+  if (typeof window === 'undefined') return;
   localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(session));
-  console.log('[QuotaKeeper] Session stored:', session.authenticated);
 }
 
 export async function clearSession(): Promise<void> {
+  if (typeof window === 'undefined') return;
   localStorage.removeItem(AUTH_SESSION_KEY);
-  console.log('[QuotaKeeper] Session cleared');
-}
-
-export async function isAuthenticated(): Promise<boolean> {
-  const session = await getSession();
-  return session?.authenticated ?? false;
+  try {
+    await fetch('/api/auth/logout', { method: 'POST' });
+  } catch {}
 }

@@ -78,10 +78,10 @@ export default function ImportExportModal({
 
   function handleExport() {
     const csv = [
-      'Name,Email,Chrome Profile,Notes',
+      'Name,Email,Provider,Status,Chrome Profile,Notes',
       ...accounts.map(
         (acc) =>
-          `"${acc.name.replace(/"/g, '""')}","${acc.email}","${(acc.chrome_profile || '').replace(/"/g, '""')}","${(acc.notes || '').replace(/"/g, '""')}"`
+          `"${acc.name.replace(/"/g, '""')}","${acc.email}","${acc.provider || ''}","${acc.status}","${(acc.chrome_profile || '').replace(/"/g, '""')}","${(acc.notes || '').replace(/"/g, '""')}"`
       ),
     ].join('\n');
 
@@ -210,6 +210,7 @@ export default function ImportExportModal({
                 style={{
                   width: '100%',
                   minHeight: '200px',
+                  maxHeight: "400px",
                   padding: '12px',
                   backgroundColor: '#0d0d0d',
                   border: '1px solid #2a2a2a',

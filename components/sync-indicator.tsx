@@ -43,12 +43,14 @@ export default function SyncIndicator() {
   return (
     <div
       style={{
-        padding: '12px 32px',
-        backgroundColor: '#171717',
-        borderBottom: '1px solid #2a2a2a',
+        padding: '10px 32px',
+        backgroundColor: '#121212',
+        borderBottom: '1px solid #222222',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '8px',
         fontSize: '12px',
       }}
     >

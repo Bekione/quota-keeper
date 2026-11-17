@@ -13,7 +13,10 @@ export default function StatsRow({ accounts }: StatsRowProps) {
   
   const nextUnlock = accounts
     .filter((acc) => acc.status === 'LOCKED' && acc.unlock_at)
-    .sort((a, b) => (a.unlock_at?.getTime() ?? 0) - (b.unlock_at?.getTime() ?? 0))[0];
+    .sort(
+      (a, b) =>
+        new Date(a.unlock_at!).getTime() - new Date(b.unlock_at!).getTime(),
+    )[0];
 
   const nextUnlockTime = nextUnlock?.unlock_at
     ? new Date(nextUnlock.unlock_at).toLocaleString(undefined, {
@@ -66,6 +69,15 @@ export default function StatsRow({ accounts }: StatsRowProps) {
             display: 'flex',
             flexDirection: 'column',
             gap: '8px',
+            transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = '#3a3a3a';
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.25)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = '#2a2a2a';
+            e.currentTarget.style.boxShadow = 'none';
           }}
         >
           <p

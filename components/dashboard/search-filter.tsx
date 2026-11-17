@@ -1,7 +1,9 @@
 "use client";
 
-import { ArrowUpDown } from "lucide-react";
-import { PROVIDERS, AccountProvider } from "@/types/account";
+import { useRef } from "react";
+import { ArrowUpDown, Search, X } from "lucide-react";
+import { PROVIDERS, PROVIDER_COLORS, AccountProvider } from "@/types/account";
+import CustomSelect, { SelectOption } from "@/components/ui/custom-select";
 
 export type SortOption =
   | "default"
@@ -41,6 +43,8 @@ export default function SearchFilter({
   sortBy = "default",
   onSortChange,
 }: SearchFilterProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
   const filterOptions: Array<{
     value: "all" | "available" | "locked";
     label: string;
@@ -50,36 +54,160 @@ export default function SearchFilter({
     { value: "locked", label: "Locked" },
   ];
 
+  const providerOptions: SelectOption[] = [
+    { value: "all", label: "All Providers" },
+    ...PROVIDERS.map((p) => ({
+      value: p,
+      label: p,
+      color: PROVIDER_COLORS[p],
+    })),
+  ];
+
+  const sortOptions: SelectOption[] = (
+    Object.keys(SORT_LABELS) as SortOption[]
+  ).map((key) => ({
+    value: key,
+    label: SORT_LABELS[key],
+  }));
+
+  const handleClearSearch = () => {
+    onSearchChange("");
+    inputRef.current?.focus();
+  };
+
   return (
     <div
       style={{
         display: "flex",
-        gap: "16px",
+        gap: "12px",
         flexWrap: "wrap",
         alignItems: "center",
       }}
     >
-      <input
-        type="text"
-        placeholder="Search by name or email... (press / to focus)"
-        value={searchQuery}
-        onChange={(e) => onSearchChange(e.target.value)}
+      {/* Search Input with Search Icon and Clear Button */}
+      <div
         style={{
+          position: "relative",
           flex: 1,
-          minWidth: "250px",
-          padding: "10px 16px",
-          backgroundColor: "#171717",
-          border: "1px solid #2a2a2a",
-          borderRadius: "8px",
-          color: "#ffffff",
-          fontSize: "14px",
+          minWidth: "260px",
+          display: "flex",
+          alignItems: "center",
         }}
-      />
+      >
+        <Search
+          size={16}
+          style={{
+            position: "absolute",
+            left: "12px",
+            color: "#71717a",
+            pointerEvents: "none",
+            flexShrink: 0,
+          }}
+        />
 
+        <input
+          ref={inputRef}
+          type="text"
+          placeholder="Search accounts or emails..."
+          value={searchQuery}
+          onChange={(e) => onSearchChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") {
+              if (searchQuery) {
+                e.stopPropagation();
+                handleClearSearch();
+              } else {
+                inputRef.current?.blur();
+              }
+            }
+          }}
+          style={{
+            width: "100%",
+            height: "38px",
+            padding: "8px 36px 8px 36px",
+            backgroundColor: "#171717",
+            border: "1px solid #2a2a2a",
+            borderRadius: "8px",
+            color: "#ffffff",
+            fontSize: "14px",
+            outline: "none",
+            transition:
+              "border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease",
+            boxSizing: "border-box",
+          }}
+          onFocus={(e) => {
+            e.currentTarget.style.borderColor = "#dbfe01";
+            e.currentTarget.style.boxShadow =
+              "0 0 0 2px rgba(219, 254, 1, 0.15)";
+          }}
+          onBlur={(e) => {
+            e.currentTarget.style.borderColor = "#2a2a2a";
+            e.currentTarget.style.boxShadow = "none";
+          }}
+        />
+
+        {/* Clear Button or Keyboard Shortcut Badge */}
+        {searchQuery ? (
+          <button
+            type="button"
+            onClick={handleClearSearch}
+            aria-label="Clear search input"
+            title="Clear search (Esc)"
+            style={{
+              position: "absolute",
+              right: "8px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: "22px",
+              height: "22px",
+              borderRadius: "50%",
+              backgroundColor: "#2a2a2a",
+              color: "#a1a1aa",
+              border: "none",
+              cursor: "pointer",
+              transition: "all 0.15s ease",
+              padding: 0,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "#3a3a3a";
+              e.currentTarget.style.color = "#ffffff";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "#2a2a2a";
+              e.currentTarget.style.color = "#a1a1aa";
+            }}
+          >
+            <X size={13} />
+          </button>
+        ) : (
+          <kbd
+            style={{
+              position: "absolute",
+              right: "10px",
+              fontSize: "11px",
+              fontWeight: 600,
+              color: "#71717a",
+              backgroundColor: "#222222",
+              border: "1px solid #333333",
+              borderRadius: "4px",
+              padding: "2px 6px",
+              pointerEvents: "none",
+              lineHeight: 1,
+            }}
+            title="Press / to focus search"
+          >
+            /
+          </kbd>
+        )}
+      </div>
+
+      {/* Status Filter Pills */}
       <div
         style={{
           display: "flex",
-          gap: "8px",
+          gap: "6px",
+          alignItems: "center",
         }}
       >
         {filterOptions.map((option) => (
@@ -87,27 +215,31 @@ export default function SearchFilter({
             key={option.value}
             onClick={() => onFilterChange(option.value)}
             style={{
-              padding: "8px 16px",
+              height: "38px",
+              padding: "0 14px",
               backgroundColor:
-                filterStatus === option.value ? "#dbfe01" : "#2a2a2a",
+                filterStatus === option.value ? "#dbfe01" : "#171717",
               color: filterStatus === option.value ? "#000000" : "#ffffff",
-              border: "none",
-              borderRadius: "6px",
+              border: `1px solid ${
+                filterStatus === option.value ? "#dbfe01" : "#2a2a2a"
+              }`,
+              borderRadius: "8px",
               fontSize: "14px",
               fontWeight: 500,
               cursor: "pointer",
-              transition: "all 0.2s",
+              transition: "all 0.15s ease",
+              whiteSpace: "nowrap",
             }}
             onMouseEnter={(e) => {
               if (filterStatus !== option.value) {
-                (e.target as HTMLButtonElement).style.backgroundColor =
-                  "#3a3a3a";
+                e.currentTarget.style.backgroundColor = "#222222";
+                e.currentTarget.style.borderColor = "#3a3a3a";
               }
             }}
             onMouseLeave={(e) => {
               if (filterStatus !== option.value) {
-                (e.target as HTMLButtonElement).style.backgroundColor =
-                  "#2a2a2a";
+                e.currentTarget.style.backgroundColor = "#171717";
+                e.currentTarget.style.borderColor = "#2a2a2a";
               }
             }}
           >
@@ -116,64 +248,27 @@ export default function SearchFilter({
         ))}
       </div>
 
-      {/* Provider Filter */}
+      {/* Provider Custom Select */}
       {onProviderChange && (
-        <select
+        <CustomSelect
           value={filterProvider}
-          onChange={(e) =>
-            onProviderChange(e.target.value as AccountProvider | "all")
+          onChange={(val) =>
+            onProviderChange(val as AccountProvider | "all")
           }
-          style={{
-            padding: "8px 12px",
-            backgroundColor: "#2a2a2a",
-            color: "#ffffff",
-            border: "1px solid #3a3a3a",
-            borderRadius: "6px",
-            fontSize: "14px",
-            cursor: "pointer",
-            outline: "none",
-          }}
-        >
-          <option value="all">All Providers</option>
-          {PROVIDERS.map((p) => (
-            <option key={p} value={p}>
-              {p}
-            </option>
-          ))}
-        </select>
+          options={providerOptions}
+          ariaLabel="Filter by provider"
+        />
       )}
 
-      {/* Sort */}
+      {/* Sort Custom Select */}
       {onSortChange && (
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "6px",
-          }}
-        >
-          <ArrowUpDown size={14} style={{ color: "#71717a", flexShrink: 0 }} />
-          <select
-            value={sortBy}
-            onChange={(e) => onSortChange(e.target.value as SortOption)}
-            style={{
-              padding: "8px 12px",
-              backgroundColor: "#2a2a2a",
-              color: "#ffffff",
-              border: "1px solid #3a3a3a",
-              borderRadius: "6px",
-              fontSize: "14px",
-              cursor: "pointer",
-              outline: "none",
-            }}
-          >
-            {(Object.keys(SORT_LABELS) as SortOption[]).map((key) => (
-              <option key={key} value={key}>
-                {SORT_LABELS[key]}
-              </option>
-            ))}
-          </select>
-        </div>
+        <CustomSelect
+          value={sortBy}
+          onChange={(val) => onSortChange(val as SortOption)}
+          options={sortOptions}
+          icon={<ArrowUpDown size={14} style={{ color: "#a1a1aa" }} />}
+          ariaLabel="Sort accounts"
+        />
       )}
     </div>
   );

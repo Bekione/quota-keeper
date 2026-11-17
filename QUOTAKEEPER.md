@@ -140,8 +140,9 @@ CREATE TABLE public.accounts (
 ## API Endpoints
 
 ### Authentication
-- `POST /api/auth/login` - Authenticate with password
-- `POST /api/auth/logout` - Clear session
+- `POST /api/auth/login` - Authenticate with password (issues signed httpOnly session cookie)
+- `POST /api/auth/logout` - Clear session cookie
+- `GET /api/auth/verify` - Verify cryptographic session token
 
 ### OAuth
 - `GET /auth/callback` - Supabase OAuth callback handler
@@ -155,12 +156,12 @@ Default lock duration is 7 days, customizable in Settings modal:
 3. Changes apply to new locked accounts
 
 ### Password
-Change password in `.env.local`:
+Set or change password in `.env`:
 ```
-QUOTAKEEPER_PASSWORD=new_password_here
+QUOTAKEEPER_PASSWORD=your_secure_password
 ```
 
-Then restart the server.
+Then restart the server. Fallback passwords are strictly disabled for security.
 
 ## Usage Guide
 
@@ -173,7 +174,7 @@ Then restart the server.
 ### Locking an Account
 1. Click the account card
 2. Click "Lock" button
-3. Choose lock duration (default 7 days)
+3. Choose unlock date and time using the 3D iOS-Style Wheel Picker (or quick preset buttons)
 4. Click "Lock Account"
 - Account status changes to LOCKED
 - Countdown timer appears showing time until unlock
@@ -225,10 +226,11 @@ QuotaKeeper works offline:
 
 ## Security
 
-- Single password authentication (stored in environment)
-- Session tokens in localStorage
+- Server-side cryptographic HMAC-SHA256 session tokens
+- Secure, httpOnly session cookies preventing browser DevTools script injection and bypasses
+- Next.js server proxy middleware verifying every protected route request before rendering
+- Strict environment-based password check (`QUOTAKEEPER_PASSWORD`), no hardcoded default password
 - Row-level security in Supabase (all queries scoped to user)
-- No sensitive data in local storage beyond session token
 - All communication via HTTPS
 
 ## Troubleshooting

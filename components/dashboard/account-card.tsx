@@ -67,8 +67,17 @@ export default function AccountCard({
         padding: "16px",
         display: "flex",
         flexDirection: "column",
-        gap: "12px",
-        transition: "border-color 0.2s",
+        height: "100%",
+        boxSizing: "border-box",
+        transition: "border-color 0.2s ease, box-shadow 0.2s ease",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.borderColor = "#3a3a3a";
+        e.currentTarget.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.25)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = "#2a2a2a";
+        e.currentTarget.style.boxShadow = "none";
       }}
     >
       {/* Header */}
@@ -77,6 +86,8 @@ export default function AccountCard({
           display: "flex",
           justifyContent: "space-between",
           alignItems: "flex-start",
+          gap: "8px",
+          marginBottom: "12px",
         }}
       >
         <div style={{ minWidth: 0, flex: 1 }}>
@@ -94,6 +105,7 @@ export default function AccountCard({
                 fontWeight: 600,
                 margin: "0",
                 color: "#ffffff",
+                lineHeight: "1.3",
               }}
             >
               {account.name}
@@ -176,74 +188,85 @@ export default function AccountCard({
             fontWeight: 500,
             whiteSpace: "nowrap",
             flexShrink: 0,
-            marginLeft: "8px",
           }}
         >
           {getStatusLabel(account.status)}
         </div>
       </div>
 
-      {/* Chrome Profile */}
-      {account.chrome_profile && (
-        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          <Globe size={11} style={{ color: "#71717a", flexShrink: 0 }} />
+      {/* Body Content */}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "10px",
+          flex: 1,
+        }}
+      >
+        {/* Chrome Profile */}
+        {account.chrome_profile && (
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <Globe size={11} style={{ color: "#71717a", flexShrink: 0 }} />
+            <p
+              style={{
+                fontSize: "12px",
+                color: "#a1a1aa",
+                margin: 0,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                flex: 1,
+              }}
+            >
+              {account.chrome_profile}
+            </p>
+          </div>
+        )}
+
+        {/* Countdown or Locked Date */}
+        {account.status === "LOCKED" && account.unlock_at && (
+          <div
+            style={{
+              padding: "8px 12px",
+              backgroundColor: "rgba(252, 165, 165, 0.05)",
+              border: "1px solid rgba(252, 165, 165, 0.12)",
+              borderRadius: "6px",
+              fontSize: "12px",
+              color: "#fca5a5",
+              lineHeight: "1.4",
+            }}
+          >
+            <div>Available in {formatCountdown(countdown)}</div>
+            <div style={{ fontSize: "11px", color: "#a1a1aa", marginTop: "2px" }}>
+              {new Date(account.unlock_at).toLocaleString()}
+            </div>
+          </div>
+        )}
+
+        {/* Notes */}
+        {account.notes && (
           <p
             style={{
               fontSize: "12px",
-              color: "#a1a1aa",
+              color: "#71717a",
               margin: 0,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-              flex: 1,
+              fontStyle: "italic",
+              borderLeft: "2px solid #2a2a2a",
+              paddingLeft: "8px",
+              lineHeight: "1.4",
             }}
           >
-            {account.chrome_profile}
+            {account.notes}
           </p>
-        </div>
-      )}
-
-      {/* Countdown or Locked Date */}
-      {account.status === "LOCKED" && account.unlock_at && (
-        <div
-          style={{
-            padding: "8px 12px",
-            backgroundColor: "rgba(252, 165, 165, 0.05)",
-            borderRadius: "6px",
-            fontSize: "12px",
-            color: "#fca5a5",
-          }}
-        >
-          Available in {formatCountdown(countdown)}
-          <br />
-          <span style={{ fontSize: "11px", color: "#a1a1aa" }}>
-            {new Date(account.unlock_at).toLocaleString()}
-          </span>
-        </div>
-      )}
-
-      {/* Notes */}
-      {account.notes && (
-        <p
-          style={{
-            fontSize: "12px",
-            color: "#71717a",
-            margin: 0,
-            fontStyle: "italic",
-            borderLeft: "2px solid #2a2a2a",
-            paddingLeft: "8px",
-          }}
-        >
-          {account.notes}
-        </p>
-      )}
+        )}
+      </div>
 
       {/* Actions */}
       <div
         style={{
           display: "flex",
           gap: "8px",
-          marginTop: "8px",
+          marginTop: "auto",
           paddingTop: "12px",
           borderTop: "1px solid #2a2a2a",
         }}
@@ -253,7 +276,8 @@ export default function AccountCard({
             onClick={onEdit}
             style={{
               flex: 1,
-              padding: "8px 12px",
+              minHeight: "34px",
+              padding: "6px 8px",
               backgroundColor: "#2a2a2a",
               color: "#ffffff",
               border: "none",
@@ -261,6 +285,11 @@ export default function AccountCard({
               fontSize: "12px",
               fontWeight: 500,
               cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              textAlign: "center",
+              lineHeight: "1.2",
             }}
             onMouseEnter={(e) => {
               (e.target as HTMLButtonElement).style.backgroundColor = "#3a3a3a";
@@ -278,7 +307,8 @@ export default function AccountCard({
             onClick={onLock}
             style={{
               flex: 1,
-              padding: "8px 12px",
+              minHeight: "34px",
+              padding: "6px 8px",
               backgroundColor: "#fca5a5",
               color: "#7f1d1d",
               border: "none",
@@ -286,6 +316,11 @@ export default function AccountCard({
               fontSize: "12px",
               fontWeight: 500,
               cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              textAlign: "center",
+              lineHeight: "1.2",
             }}
           >
             Lock
@@ -298,7 +333,8 @@ export default function AccountCard({
                 onClick={onUnlock}
                 style={{
                   flex: 1,
-                  padding: "8px 12px",
+                  minHeight: "34px",
+                  padding: "6px 4px",
                   backgroundColor: "#86efac",
                   color: "#14532d",
                   border: "none",
@@ -306,6 +342,11 @@ export default function AccountCard({
                   fontSize: "12px",
                   fontWeight: 500,
                   cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  textAlign: "center",
+                  lineHeight: "1.2",
                 }}
               >
                 Unlock Now
@@ -316,7 +357,8 @@ export default function AccountCard({
                 onClick={onLock}
                 style={{
                   flex: 1,
-                  padding: "8px 12px",
+                  minHeight: "34px",
+                  padding: "6px 4px",
                   backgroundColor: "#fbbf24",
                   color: "#78350f",
                   border: "none",
@@ -324,6 +366,11 @@ export default function AccountCard({
                   fontSize: "12px",
                   fontWeight: 500,
                   cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  textAlign: "center",
+                  lineHeight: "1.2",
                 }}
               >
                 Edit Lock
@@ -336,7 +383,8 @@ export default function AccountCard({
             onClick={onDelete}
             style={{
               flex: 1,
-              padding: "8px 12px",
+              minHeight: "34px",
+              padding: "6px 8px",
               backgroundColor: "rgba(239, 68, 68, 0.1)",
               color: "#fca5a5",
               border: "1px solid rgba(239, 68, 68, 0.3)",
@@ -344,6 +392,11 @@ export default function AccountCard({
               fontSize: "12px",
               fontWeight: 500,
               cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              textAlign: "center",
+              lineHeight: "1.2",
             }}
             onMouseEnter={(e) => {
               (e.target as HTMLButtonElement).style.backgroundColor =

@@ -27,6 +27,7 @@ export default function DeleteConfirmation({
     setLoading(true);
 
     try {
+      if (!account) return;
       const success = await deleteAccount(account.id);
 
       if (success) {

@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { Plus } from "lucide-react";
 import HeroCard from "@/components/dashboard/hero-card";
 import AccountsList from "@/components/dashboard/accounts-list";
 import SearchFilter, { type SortOption } from "@/components/dashboard/search-filter";
 import StatsRow from "@/components/dashboard/stats-row";
+import DashboardSkeleton from "@/components/dashboard/dashboard-skeleton";
 import AddAccountModal from "@/components/modals/add-account-modal";
 import EditAccountModal from "@/components/modals/edit-account-modal";
 import LockAccountModal from "@/components/modals/lock-account-modal";
@@ -162,19 +164,7 @@ export default function Dashboard() {
   }, [addModal, editModal, lockModal, deleteModal, importExportModal]);
 
   if (loading) {
-    return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: "400px",
-          color: "#a1a1aa",
-        }}
-      >
-        Loading your accounts...
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   return (
@@ -190,11 +180,11 @@ export default function Dashboard() {
         style={{
           display: "flex",
           gap: "16px",
-          alignItems: "flex-end",
+          alignItems: "center",
           flexWrap: "wrap",
         }}
       >
-        <div style={{ flex: 1, minWidth: "250px" }}>
+        <div style={{ flex: 1, minWidth: "260px" }}>
           <SearchFilter
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
@@ -209,24 +199,34 @@ export default function Dashboard() {
         <button
           onClick={() => addModal.open()}
           style={{
-            padding: "10px 16px",
+            height: "38px",
+            padding: "0 16px",
             backgroundColor: "#dbfe01",
             color: "#000000",
             border: "none",
-            borderRadius: "6px",
+            borderRadius: "8px",
             fontWeight: 600,
             fontSize: "14px",
             cursor: "pointer",
             whiteSpace: "nowrap",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "6px",
+            boxShadow: "0 2px 8px rgba(219, 254, 1, 0.2)",
+            transition: "all 0.15s ease",
           }}
           onMouseEnter={(e) => {
-            (e.target as HTMLButtonElement).style.opacity = "0.9";
+            e.currentTarget.style.backgroundColor = "#e4ff1a";
+            e.currentTarget.style.boxShadow = "0 4px 12px rgba(219, 254, 1, 0.35)";
           }}
           onMouseLeave={(e) => {
-            (e.target as HTMLButtonElement).style.opacity = "1";
+            e.currentTarget.style.backgroundColor = "#dbfe01";
+            e.currentTarget.style.boxShadow = "0 2px 8px rgba(219, 254, 1, 0.2)";
           }}
         >
-          + Add Account
+          <Plus size={16} strokeWidth={2.5} />
+          <span>Add Account</span>
         </button>
       </div>
 
@@ -235,18 +235,80 @@ export default function Dashboard() {
         <div
           style={{
             textAlign: "center",
-            padding: "64px 32px",
-            color: "#71717a",
+            padding: "56px 32px",
+            backgroundColor: "#141414",
+            border: "1px dashed #2a2a2a",
+            borderRadius: "12px",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "10px",
           }}
         >
-          <p style={{ fontSize: "16px", marginBottom: "8px" }}>
-            No accounts found
+          <p style={{ fontSize: "16px", fontWeight: 600, color: "#ffffff", margin: 0 }}>
+            {accounts.length === 0 ? "No accounts yet" : "No accounts match your criteria"}
           </p>
-          <p style={{ fontSize: "14px" }}>
+          <p style={{ fontSize: "14px", color: "#a1a1aa", margin: 0 }}>
             {accounts.length === 0
-              ? "Add your first account to get started"
-              : "Try adjusting your search or filter"}
+              ? "Add your first account to start tracking AI quotas."
+              : "Try adjusting your search terms, status, or provider filter."}
           </p>
+          {accounts.length > 0 ? (
+            <button
+              onClick={() => {
+                setSearchQuery("");
+                setFilterStatus("all");
+                setFilterProvider("all");
+              }}
+              style={{
+                marginTop: "6px",
+                padding: "8px 16px",
+                backgroundColor: "#222222",
+                color: "#ffffff",
+                border: "1px solid #333333",
+                borderRadius: "6px",
+                fontSize: "13px",
+                fontWeight: 500,
+                cursor: "pointer",
+                transition: "all 0.15s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "#2a2a2a";
+                e.currentTarget.style.borderColor = "#444444";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "#222222";
+                e.currentTarget.style.borderColor = "#333333";
+              }}
+            >
+              Clear search & filters
+            </button>
+          ) : (
+            <button
+              onClick={() => addModal.open()}
+              style={{
+                marginTop: "6px",
+                padding: "8px 18px",
+                backgroundColor: "#dbfe01",
+                color: "#000000",
+                border: "none",
+                borderRadius: "6px",
+                fontWeight: 600,
+                fontSize: "14px",
+                cursor: "pointer",
+                transition: "opacity 0.15s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.opacity = "0.9";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.opacity = "1";
+              }}
+            >
+              + Add First Account
+            </button>
+          )}
         </div>
       ) : (
         <AccountsList

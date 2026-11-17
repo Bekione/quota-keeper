@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { format, addDays } from "date-fns";
 import { Account } from "@/types/account";
 import { lockAccount } from "@/lib/services/account-service";
+import { IosDateTimePicker } from "@/components/ios-picker/ios-date-time-picker";
 
 interface LockAccountModalProps {
   isOpen: boolean;
@@ -30,6 +31,7 @@ export default function LockAccountModal({
   const [customTime, setCustomTime] = useState("00:00");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showManualInput, setShowManualInput] = useState(false);
 
   const isEditMode = account?.status === "LOCKED";
 
@@ -97,12 +99,12 @@ export default function LockAccountModal({
           backgroundColor: "#171717",
           border: "1px solid #2a2a2a",
           borderRadius: "12px",
-          padding: "32px",
-          maxWidth: "480px",
-          width: "90%",
+          padding: "28px 24px",
+          maxWidth: "520px",
+          width: "92%",
           display: "flex",
           flexDirection: "column",
-          gap: "20px",
+          gap: "18px",
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -153,16 +155,16 @@ export default function LockAccountModal({
                     onClick={() => setCustomDate(dateOffsetDays(days))}
                     style={{
                       padding: "8px 14px",
-                      backgroundColor: isActive ? "#dbfe01" : "#2a2a2a",
+                      backgroundColor: isActive ? "#dbfe01" : "#222222",
                       color: isActive ? "#000000" : "#ffffff",
                       border: isActive
                         ? "1px solid #dbfe01"
-                        : "1px solid #3a3a3a",
-                      borderRadius: "6px",
+                        : "1px solid #333333",
+                      borderRadius: "8px",
                       fontSize: "13px",
                       fontWeight: 600,
                       cursor: "pointer",
-                      transition: "all 0.15s",
+                      transition: "all 0.15s ease",
                     }}
                   >
                     {days}d
@@ -173,54 +175,89 @@ export default function LockAccountModal({
           </div>
         )}
 
-        {/* Date & Time — always visible */}
+        {/* Date & Time with Embla iOS Wheel Picker */}
         <div>
-          <label
+          <div
             style={{
-              display: "block",
-              fontSize: "13px",
-              fontWeight: 500,
-              color: "#71717a",
-              marginBottom: "10px",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "8px",
             }}
           >
-            {isEditMode ? "Unlock date & time" : "Set exact unlock date & time"}
-          </label>
-          <div style={{ display: "flex", gap: "8px" }}>
-            <input
-              type="date"
-              value={customDate}
-              onChange={(e) => setCustomDate(e.target.value)}
+            <label
               style={{
-                flex: 1,
-                padding: "10px 12px",
-                backgroundColor: "#0d0d0d",
-                border: "1px solid #2a2a2a",
-                borderRadius: "6px",
-                color: "#ffffff",
-                fontSize: "14px",
-                boxSizing: "border-box",
-                colorScheme: "dark",
+                display: "block",
+                fontSize: "13px",
+                fontWeight: 500,
+                color: "#71717a",
+                margin: 0,
               }}
-            />
-            <input
-              type="time"
-              value={customTime}
-              onChange={(e) => setCustomTime(e.target.value)}
+            >
+              {isEditMode ? "Unlock date & time" : "Set exact unlock date & time"}
+            </label>
+            <button
+              type="button"
+              onClick={() => setShowManualInput(!showManualInput)}
               style={{
-                width: "130px",
-                padding: "10px 12px",
-                backgroundColor: "#0d0d0d",
-                border: "1px solid #2a2a2a",
-                borderRadius: "6px",
-                color: "#ffffff",
-                fontSize: "14px",
-                boxSizing: "border-box",
-                colorScheme: "dark",
+                background: "transparent",
+                border: "none",
+                color: "#a1a1aa",
+                fontSize: "12px",
+                cursor: "pointer",
+                padding: "2px 6px",
+                textDecoration: "underline",
               }}
-            />
+            >
+              {showManualInput ? "Use Wheel Picker" : "Manual text input"}
+            </button>
           </div>
-         
+
+          {!showManualInput ? (
+            <IosDateTimePicker
+              date={customDate}
+              time={customTime}
+              onChange={(newDate, newTime) => {
+                setCustomDate(newDate);
+                setCustomTime(newTime);
+              }}
+            />
+          ) : (
+            <div style={{ display: "flex", gap: "8px" }}>
+              <input
+                type="date"
+                value={customDate}
+                onChange={(e) => setCustomDate(e.target.value)}
+                style={{
+                  flex: 1,
+                  padding: "10px 12px",
+                  backgroundColor: "#0d0d0d",
+                  border: "1px solid #2a2a2a",
+                  borderRadius: "6px",
+                  color: "#ffffff",
+                  fontSize: "14px",
+                  boxSizing: "border-box",
+                  colorScheme: "dark",
+                }}
+              />
+              <input
+                type="time"
+                value={customTime}
+                onChange={(e) => setCustomTime(e.target.value)}
+                style={{
+                  width: "130px",
+                  padding: "10px 12px",
+                  backgroundColor: "#0d0d0d",
+                  border: "1px solid #2a2a2a",
+                  borderRadius: "6px",
+                  color: "#ffffff",
+                  fontSize: "14px",
+                  boxSizing: "border-box",
+                  colorScheme: "dark",
+                }}
+              />
+            </div>
+          )}
         </div>
 
         {/* Preview */}
@@ -267,22 +304,30 @@ export default function LockAccountModal({
         )}
 
         {/* Actions */}
-        <div style={{ display: "flex", gap: "8px" }}>
+        <div style={{ display: "flex", gap: "10px", marginTop: "4px" }}>
           <button
             type="button"
             onClick={onClose}
             disabled={loading}
             style={{
               flex: 1,
-              padding: "10px 16px",
-              backgroundColor: "#2a2a2a",
+              height: "40px",
+              padding: "0 16px",
+              backgroundColor: "#222222",
               color: "#ffffff",
-              border: "none",
-              borderRadius: "6px",
+              border: "1px solid #333333",
+              borderRadius: "8px",
               fontWeight: 600,
               fontSize: "14px",
               cursor: "pointer",
               opacity: loading ? 0.5 : 1,
+              transition: "all 0.15s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "#2a2a2a";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "#222222";
             }}
           >
             Cancel
@@ -293,15 +338,17 @@ export default function LockAccountModal({
             disabled={loading || !isValidDate}
             style={{
               flex: 1,
-              padding: "10px 16px",
+              height: "40px",
+              padding: "0 16px",
               backgroundColor: isEditMode ? "#fbbf24" : "#fca5a5",
               color: isEditMode ? "#78350f" : "#7f1d1d",
               border: "none",
-              borderRadius: "6px",
+              borderRadius: "8px",
               fontWeight: 600,
               fontSize: "14px",
               cursor: loading || !isValidDate ? "not-allowed" : "pointer",
               opacity: loading || !isValidDate ? 0.5 : 1,
+              transition: "all 0.15s ease",
             }}
           >
             {loading ? "Saving..." : isEditMode ? "Update Lock" : "Lock Account"}
